@@ -83,12 +83,14 @@ ConsoleBatch::ConsoleBatch(std::vector<ImageFileInfo> const& images, QString con
         m_ptrDisambiguator(new FileNameDisambiguator),
         m_ptrPages(new ProjectPages(images, ProjectPages::AUTO_PAGES, layout))
 {
+    m_outFileNameGen = OutputFileNameGenerator(m_ptrDisambiguator, output_directory, m_ptrPages->layoutDirection());
+
     PageSelectionAccessor const accessor((IntrusivePtr<PageSelectionProvider>())); // Won't really be used anyway.
     m_ptrStages = IntrusivePtr<StageSequence>(new StageSequence(m_ptrPages, accessor));
 
     //m_ptrThumbnailCache = IntrusivePtr<ThumbnailPixmapCache>(new ThumbnailPixmapCache(output_dir+"/cache/thumbs", QSize(200,200), 40, 5));
     m_ptrThumbnailCache = Utils::createThumbnailCache(output_directory);
-    m_outFileNameGen = OutputFileNameGenerator(m_ptrDisambiguator, output_directory, m_ptrPages->layoutDirection());
+
 }
 
 ConsoleBatch::ConsoleBatch(QString const project_file)
@@ -112,18 +114,19 @@ ConsoleBatch::ConsoleBatch(QString const project_file)
     PageSelectionAccessor const accessor((IntrusivePtr<PageSelectionProvider>())); // Won't be used anyway.
     m_ptrDisambiguator = m_ptrReader->namingDisambiguator();
 
-    m_ptrStages = IntrusivePtr<StageSequence>(new StageSequence(m_ptrPages, accessor));
-    m_ptrReader->readFilterSettings(m_ptrStages->filters());
-
     CommandLine const& cli = CommandLine::get();
     QString output_directory = m_ptrReader->outputDirectory();
     if (!cli.outputDirectory().isEmpty()) {
         output_directory = cli.outputDirectory();
     }
 
+    m_outFileNameGen = OutputFileNameGenerator(m_ptrDisambiguator, output_directory, m_ptrPages->layoutDirection());
+
+    m_ptrStages = IntrusivePtr<StageSequence>(new StageSequence(m_ptrPages, accessor));
+    m_ptrReader->readFilterSettings(m_ptrStages->filters());
+
     //m_ptrThumbnailCache = IntrusivePtr<ThumbnailPixmapCache>(new ThumbnailPixmapCache(output_directory+"/cache/thumbs", QSize(200,200), 40, 5));
     m_ptrThumbnailCache = Utils::createThumbnailCache(output_directory);
-    m_outFileNameGen = OutputFileNameGenerator(m_ptrDisambiguator, output_directory, m_ptrPages->layoutDirection());
 }
 
 BackgroundTaskPtr
@@ -145,7 +148,7 @@ ConsoleBatch::createCompositeTask(
 
     if (last_filter_idx >= m_ptrStages->publishFilterIdx()) {
         publish_task = m_ptrStages->publishFilter()->createTask(
-                    page.id(), batch
+                    page.id(), m_ptrThumbnailCache, m_outFileNameGen, batch
                     );
         debug = false;
     }

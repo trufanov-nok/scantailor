@@ -22,28 +22,37 @@
 #include "NonCopyable.h"
 #include "CompositeCacheDrivenTask.h"
 #include "IntrusivePtr.h"
+#include "PageId.h"
 
 class PageInfo;
 class AbstractFilterDataCollector;
+class OutputFileNameGenerator;
+class ImageTransformation;
 
 namespace publish
 {
 
 class Settings;
+class DjbzDispatcher;
 
-class CacheDrivenTask : public CompositeCacheDrivenTask
+class CacheDrivenTask : public RefCountable
 {
     DECLARE_NON_COPYABLE(CacheDrivenTask)
 public:
-    CacheDrivenTask(
-        IntrusivePtr<Settings> const& settings);
+        CacheDrivenTask(
+            IntrusivePtr<Settings> const& settings,
+            OutputFileNameGenerator const& out_file_name_gen);
 
-    virtual ~CacheDrivenTask();
+    virtual ~CacheDrivenTask() override;
 
-    virtual void process(
-        PageInfo const& page_info, AbstractFilterDataCollector* collector);
+    void process(PageInfo const& page_info, AbstractFilterDataCollector* collector, const ImageTransformation &xform);
+private:
+    bool needPageReprocess(const PageId &page_id) const;
 private:
     IntrusivePtr<Settings> m_ptrSettings;
+    DjbzDispatcher& m_refDjbzDispatcher;
+    const OutputFileNameGenerator& m_refOutputFileNameGenerator;
+    PageId m_pageId;
 };
 
 } // namespace publishing

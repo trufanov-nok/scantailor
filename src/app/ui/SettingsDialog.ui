@@ -168,7 +168,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>30</number>
       </property>
       <widget class="QWidget" name="pageEmpty">
        <layout class="QVBoxLayout" name="verticalLayout_2"/>
@@ -224,8 +224,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>419</width>
-                <height>273</height>
+                <width>103</width>
+                <height>1089</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_70">
@@ -1125,8 +1125,8 @@ If project was never saved before this will create UnnamedAutoSave.Scantailor fi
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>929</height>
+                <width>93</width>
+                <height>945</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_57">
@@ -1418,8 +1418,8 @@ Use &quot;Apply To...&quot; dialog to apply changes to a specified range of page
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1238</height>
+                <width>91</width>
+                <height>1334</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_60">
@@ -1647,8 +1647,8 @@ The dividing line can also be determined/moved automatically or specified manual
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>99</width>
-                <height>981</height>
+                <width>433</width>
+                <height>405</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_96">
@@ -1865,8 +1865,8 @@ The Deviant page on this stage is defined as a page which absolute deskew angle 
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1295</height>
+                <width>83</width>
+                <height>1615</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_63">
@@ -2098,8 +2098,8 @@ The Deviant page on this stage is defined as a page which content zone square di
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1477</height>
+                <width>96</width>
+                <height>1541</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_41">
@@ -2374,8 +2374,8 @@ Everything outside page area is highlighted with yellow in page view panel.</str
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1236</height>
+                <width>88</width>
+                <height>1348</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_68">
@@ -2530,8 +2530,8 @@ The Deviant page on this stage is defined as a page which has no alignment.</str
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1143</height>
+                <width>95</width>
+                <height>1191</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_90">
@@ -2817,8 +2817,8 @@ The Deviant page on this stage is defined as a page which has no alignment.</str
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>4133</height>
+                <width>93</width>
+                <height>4389</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_89">
@@ -3284,8 +3284,8 @@ Unlike the other stages, the &quot;Output&quot; stage becomes available only aft
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1006</height>
+                <width>89</width>
+                <height>1070</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_74">
@@ -3397,8 +3397,8 @@ Making black and white image from grayscale or color source requires binarizatio
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>463</height>
+                <width>80</width>
+                <height>575</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_76">
@@ -3503,8 +3503,8 @@ Equalize illumination option normalizes the background color, bringing it to whi
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>863</height>
+                <width>95</width>
+                <height>879</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_77">
@@ -3609,8 +3609,8 @@ Automatic picture zones detection works well enough, but if the picture merges s
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>623</height>
+                <width>88</width>
+                <height>703</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_79">
@@ -3707,8 +3707,8 @@ This mask can't be changed directly but only switched on/off. User could also cr
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1615</height>
+                <width>88</width>
+                <height>1855</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_81">
@@ -3854,8 +3854,8 @@ In case sensitivity parameter is 100% the picture detection algorithm looks for 
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1521</height>
+                <width>83</width>
+                <height>1793</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_73">
@@ -4037,8 +4037,8 @@ As Foreground layer is using binarization to separate content from background it
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>98</width>
-                <height>1396</height>
+                <width>88</width>
+                <height>1540</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_92">
@@ -4248,8 +4248,8 @@ As Foreground layer is using binarization to separate content from background it
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>103</width>
-                <height>1394</height>
+                <width>433</width>
+                <height>428</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_59">
@@ -4292,6 +4292,134 @@ Debug images are saved as png in temporary folder with unique filenames. These f
               </layout>
              </widget>
             </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="pagePublish">
+       <layout class="QVBoxLayout" name="verticalLayout_97">
+        <item>
+         <widget class="QGroupBox" name="groupBox_20">
+          <property name="title">
+           <string>Description</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_93">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QScrollArea" name="scrollArea_20">
+             <property name="frameShape">
+              <enum>QFrame::NoFrame</enum>
+             </property>
+             <property name="widgetResizable">
+              <bool>true</bool>
+             </property>
+             <widget class="QWidget" name="scrollAreaWidgetContents_20">
+              <property name="geometry">
+               <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>415</width>
+                <height>305</height>
+               </rect>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_94">
+               <property name="spacing">
+                <number>6</number>
+               </property>
+               <property name="leftMargin">
+                <number>6</number>
+               </property>
+               <property name="topMargin">
+                <number>6</number>
+               </property>
+               <property name="rightMargin">
+                <number>6</number>
+               </property>
+               <property name="bottomMargin">
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="lblDebugModeDescr_2">
+                 <property name="text">
+                  <string>Publish</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                 <property name="textInteractionFlags">
+                  <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbMinidjvuBin">
+          <property name="title">
+           <string>DjVu encoder (minidjvu-mod):</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_95">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_20">
+             <item>
+              <widget class="QLineEdit" name="edMinidjvu"/>
+             </item>
+             <item>
+              <widget class="QToolButton" name="btnMinidjvuChoose">
+               <property name="text">
+                <string>...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_21">
+             <item>
+              <widget class="QLabel" name="lblMinidjvuVersion">
+               <property name="text">
+                <string notr="true">Version:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_19">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>

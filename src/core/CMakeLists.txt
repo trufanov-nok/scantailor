@@ -52,6 +52,7 @@ SET(
         ThumbnailPixmapCache.cpp ThumbnailPixmapCache.h
         ThumbnailBase.cpp ThumbnailBase.h
         ThumbnailFactory.cpp ThumbnailFactory.h
+        ThumbnailSequence.cpp ThumbnailSequence.h
         IncompleteThumbnail.cpp IncompleteThumbnail.h
         ContentBoxPropagator.cpp ContentBoxPropagator.h
         PageOrientationPropagator.cpp PageOrientationPropagator.h
@@ -71,6 +72,7 @@ SET(
         ImageMetadataLoader.cpp ImageMetadataLoader.h
         TiffReader.cpp TiffReader.h
         TiffWriter.cpp TiffWriter.h
+        DjVuReader.cpp DjVuReader.h
         PngMetadataLoader.cpp PngMetadataLoader.h
         TiffMetadataLoader.cpp TiffMetadataLoader.h
         JpegMetadataLoader.cpp JpegMetadataLoader.h
@@ -95,6 +97,7 @@ SET(
         SelectedPage.cpp SelectedPage.h
         Utils.cpp Utils.h
         StatusBarProvider.cpp StatusBarProvider.h
+        ExportSuggestions.cpp ExportSuggestions.h
         PageView.h
         AutoManualMode.h
         AbstractCommand.h

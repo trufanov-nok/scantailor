@@ -20,6 +20,8 @@
 #include <QString>
 #include <assert.h>
 
+const QString PageId::mimeType = "application/stu-page-ids";
+
 PageId::PageId()
     :   m_subPage(SINGLE_PAGE)
 {
@@ -72,6 +74,38 @@ PageId::subPageFromString(QString const& string, bool* ok)
         *ok = recognized;
     }
     return sub_page;
+}
+
+QByteArray PageId::toByteArray() const
+{
+    QByteArray res;
+    res.resize(sizeof(m_subPage) + sizeof(int));
+    memcpy(res.data(), &m_subPage, sizeof(m_subPage));
+
+    QByteArray payload = m_imageId.toByteArray();
+    int payload_len = payload.size();
+    memcpy(res.data() + sizeof(m_subPage), &payload_len, sizeof(int));
+    res.append(payload);
+    return res;
+}
+
+int PageId::fromByteArray(const QByteArray& data, PageId& pageId)
+{
+    assert(data.size() > (int) (sizeof(m_subPage) + sizeof(int)));
+    SubPage page;
+
+    int bytes_read = 0;
+    memcpy(&page, data.data(), sizeof(m_subPage));
+    bytes_read += sizeof(m_subPage);
+
+    int payload_len = 0;
+    memcpy(&payload_len, data.data() + bytes_read, sizeof(int));
+    bytes_read += sizeof(int);
+
+    ImageId image_id;
+    bytes_read += ImageId::fromByteArray(data.mid(bytes_read, payload_len), image_id);
+    pageId = PageId(image_id, page);
+    return bytes_read;
 }
 
 bool operator==(PageId const& lhs, PageId const& rhs)

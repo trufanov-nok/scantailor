@@ -16,26 +16,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ImageView.h"
-#include "ImageView.moc"
-#include "ImageTransformation.h"
-#include "ImagePresentation.h"
+#ifndef PUBLISH_ORDER_BY_FILESIZE_PROVIDER_H_
+#define PUBLISH_ORDER_BY_FILESIZE_PROVIDER_H_
+
+#include "Settings.h"
+#include "IntrusivePtr.h"
+#include "PageOrderProvider.h"
 
 namespace publish
 {
 
-ImageView::ImageView(
-    QImage const& image, QImage const& downscaled_image,
-    ImageTransformation const& xform)
-    :   ImageViewBase(
-            image, downscaled_image,
-            ImagePresentation(xform.transform(), xform.resultingPreCropArea())
-        )
+class OrderByFileSize : public PageOrderProvider
 {
-}
+public:
+    OrderByFileSize(IntrusivePtr<Settings> const& settings);
 
-ImageView::~ImageView()
-{
-}
+	virtual bool precedes(
+		PageId const& lhs_page, bool lhs_incomplete,
+		PageId const& rhs_page, bool rhs_incomplete) const;
+
+    virtual QString hint(PageId const& page) const;
+private:
+	IntrusivePtr<Settings> m_ptrSettings;
+};
 
 } // namespace publish
+
+#endif //PUBLISH_ORDER_BY_FILESIZE_PROVIDER_H_

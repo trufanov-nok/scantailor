@@ -110,3 +110,26 @@ Website: https://www.qbittorrent.org/
 Original license: GNU GPL version 2
 Files:
 auto-magnet.png
+
+Origin: Oxygen Icon Theme
+Website: https://github.com/KDE/oxygen-icons
+Original license: LGPL-3+
+Files:
+document-multiple.png
+checkmark.png
+
+Origin: Breeze Icon Theme
+Website: https://github.com/KDE/breeze-icons
+Original license: GNU LGPL version 2.1
+Files:
+document-encrypted.png
+
+Origin: DjVuLibre
+Website: http://djvu.sourceforge.net/
+Original license: GNU GPL version 2
+Files:
+djvulibre-mime-prebuilt-hi24-djvu-hovered.png
+djvulibre-mime-prebuilt-hi24-djvu-pressed.png
+djvulibre-mime-prebuilt-hi24-djvu.png
+djvulibre-mime-prebuilt-hi24-djvu-disabled.png
+

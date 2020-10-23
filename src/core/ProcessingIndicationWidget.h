@@ -44,10 +44,12 @@ public:
      * \brief Launch the "processing restarted" effect.
      */
     void processingRestartedEffect();
-protected:
-    virtual void paintEvent(QPaintEvent* event);
 
-    virtual void timerEvent(QTimerEvent* event);
+    virtual QSize sizeHint() const override;
+protected:
+    virtual void paintEvent(QPaintEvent* event) override;
+
+    virtual void timerEvent(QTimerEvent* event) override;
 private:
     QRect animationRect() const;
 

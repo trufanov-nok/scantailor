@@ -132,26 +132,26 @@ Utils::calcSoftMarginsMM(
     Alignment const& alignment, QRectF const& contentRect, QRectF const& page_rect)
 {
     if (alignment.isNull()) {
-#ifdef DEBUG
-        std::cout << "\tskip soft margins: " <<  "\n";
-#endif
+//#ifdef DEBUG
+//        std::cout << "\tskip soft margins: " <<  "\n";
+//#endif
         // This means we are not aligning this page with others.
         return Margins(0, 0, 0, 0);
     }
 
-#ifdef DEBUG
-    std::cout << "left: " << page_rect.left() << " ";
-    std::cout << "top: " << page_rect.top() << " ";
-    std::cout << "right: " << page_rect.right() << " ";
-    std::cout << "bottom: " << page_rect.bottom() << " ";
-    std::cout << "\n";
+//#ifdef DEBUG
+//    std::cout << "left: " << page_rect.left() << " ";
+//    std::cout << "top: " << page_rect.top() << " ";
+//    std::cout << "right: " << page_rect.right() << " ";
+//    std::cout << "bottom: " << page_rect.bottom() << " ";
+//    std::cout << "\n";
 
-    std::cout << "contentLeft: " << contentRect.left() << " ";
-    std::cout << "contentTop: " << contentRect.top() << " ";
-    std::cout << "contentRight: " << contentRect.right() << " ";
-    std::cout << "contentBottom: " << contentRect.bottom() << " ";
-    std::cout << "\n";
-#endif
+//    std::cout << "contentLeft: " << contentRect.left() << " ";
+//    std::cout << "contentTop: " << contentRect.top() << " ";
+//    std::cout << "contentRight: " << contentRect.right() << " ";
+//    std::cout << "contentBottom: " << contentRect.bottom() << " ";
+//    std::cout << "\n";
+//#endif
 
     Alignment myAlign = alignment;
 
@@ -186,11 +186,11 @@ Utils::calcSoftMarginsMM(
         aggBottomBorder = delta_height - aggTopBorder;
     }
 
-#ifdef DEBUG
-    std::cout << "delta_width: " << delta_width << " " << "delta_height: " << delta_height << "\n";
-    std::cout << aggLeftBorder << " " << aggRightBorder << " " << aggTopBorder << " " << aggBottomBorder << ":" << "\n";
-    std::cout << leftBorder << " " << rightBorder << " " << topBorder << " " << bottomBorder << ":" << "\n";
-#endif
+//#ifdef DEBUG
+//    std::cout << "delta_width: " << delta_width << " " << "delta_height: " << delta_height << "\n";
+//    std::cout << aggLeftBorder << " " << aggRightBorder << " " << aggTopBorder << " " << aggBottomBorder << ":" << "\n";
+//    std::cout << leftBorder << " " << rightBorder << " " << topBorder << " " << bottomBorder << ":" << "\n";
+//#endif
 
     // if align auto and not empty page
     if (contentRect.width() > 1.0 && (myAlign.horizontal() == Alignment::HAUTO || myAlign.vertical() == Alignment::VAUTO)) {
@@ -210,12 +210,12 @@ Utils::calcSoftMarginsMM(
         double vShift = newBottomBorder - newTopBorder;
         double vabsShift = std::abs(vShift);
 
-#ifdef DEBUG
-        std::cout << newLeftBorder << " " << newRightBorder << " " << newTopBorder << " " << newBottomBorder << "\n";
-        std::cout << vabsShift << " " << habsShift << std::endl;
-        std::cout << cmi << std::endl;
-        std::cout << hTolerance << " " << vTolerance << "\n";
-#endif
+//#ifdef DEBUG
+//        std::cout << newLeftBorder << " " << newRightBorder << " " << newTopBorder << " " << newBottomBorder << "\n";
+//        std::cout << vabsShift << " " << habsShift << std::endl;
+//        std::cout << cmi << std::endl;
+//        std::cout << hTolerance << " " << vTolerance << "\n";
+//#endif
         if (myAlign.horizontal() == Alignment::HAUTO) {
             if ((1.0 - cmi) < alignment.tolerance()) {
                 myAlign.setHorizontal(Alignment::HCENTER);
@@ -262,34 +262,34 @@ Utils::calcSoftMarginsMM(
         }
 
     }
-#ifdef DEBUG
-    std::cout << "\n";
-#endif
+//#ifdef DEBUG
+//    std::cout << "\n";
+//#endif
 
     if (delta_width > 0.0) {
         switch (myAlign.horizontal()) {
         case Alignment::LEFT:
-#ifdef DEBUG
-            std::cout << "align:left" << std::endl;
-#endif
+//#ifdef DEBUG
+//            std::cout << "align:left" << std::endl;
+//#endif
             right = delta_width;
             break;
         case Alignment::HCENTER:
-#ifdef DEBUG
-            std::cout << "align:hcenter" << std::endl;
-#endif
+//#ifdef DEBUG
+//            std::cout << "align:hcenter" << std::endl;
+//#endif
             left = right = 0.5 * delta_width;
             break;
         case Alignment::RIGHT:
-#ifdef DEBUG
-            std::cout << "align:right" << std::endl;
-#endif
+//#ifdef DEBUG
+//            std::cout << "align:right" << std::endl;
+//#endif
             left = delta_width;
             break;
         default:
-#ifdef DEBUG
-            std::cout << "align:horiginal" << std::endl;
-#endif
+//#ifdef DEBUG
+//            std::cout << "align:horiginal" << std::endl;
+//#endif
             left = aggLeftBorder;
             right = aggRightBorder;
             break;
@@ -299,27 +299,27 @@ Utils::calcSoftMarginsMM(
     if (delta_height > 0.0) {
         switch (myAlign.vertical()) {
         case Alignment::TOP:
-#ifdef DEBUG
-            std::cout << "align:top" << std::endl;
-#endif
+//#ifdef DEBUG
+//            std::cout << "align:top" << std::endl;
+//#endif
             bottom = delta_height;
             break;
         case Alignment::VCENTER:
-#ifdef DEBUG
-            std::cout << "align:vcenter" << std::endl;
-#endif
+//#ifdef DEBUG
+//            std::cout << "align:vcenter" << std::endl;
+//#endif
             top = bottom = 0.5 * delta_height;
             break;
         case Alignment::BOTTOM:
-#ifdef DEBUG
-            std::cout << "align:bottom" << std::endl;
-#endif
+//#ifdef DEBUG
+//            std::cout << "align:bottom" << std::endl;
+//#endif
             top = delta_height;
             break;
         default:
-#ifdef DEBUG
-            std::cout << "align:voriginal" << std::endl;
-#endif
+//#ifdef DEBUG
+//            std::cout << "align:voriginal" << std::endl;
+//#endif
             top = aggTopBorder;
             bottom = aggBottomBorder;
             break;

@@ -27,14 +27,18 @@ FilterData::FilterData(QImage const& image)
     :   m_origImage(image),
         m_grayImage(toGrayscale(m_origImage)),
         m_xform(image.rect(), Dpm(image)),
-        m_bwThreshold(BinaryThreshold::otsuThreshold(m_grayImage))
+        m_bwThreshold(BinaryThreshold::otsuThreshold(m_grayImage)),
+        m_exportSuggestions(nullptr)
 {
 }
 
-FilterData::FilterData(FilterData const& other, ImageTransformation const& xform)
+FilterData::FilterData(FilterData const& other,
+                       ImageTransformation const& xform,
+                       const ExportSuggestions* exportSuggestions)
     :   m_origImage(other.m_origImage),
         m_grayImage(other.m_grayImage),
         m_xform(xform),
-        m_bwThreshold(other.m_bwThreshold)
+        m_bwThreshold(other.m_bwThreshold),
+        m_exportSuggestions(exportSuggestions)
 {
 }

@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <property name="documentMode">
       <bool>true</bool>
@@ -125,9 +125,9 @@
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>-238</y>
+            <y>0</y>
             <width>430</width>
-            <height>593</height>
+            <height>580</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -190,7 +190,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;http://scantailor.org/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;ScanTailor&lt;/span&gt;&lt;/a&gt; (master and &lt;a href=&quot;https://github.com/scantailor/scantailor/tree/qt5&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;qt5&lt;/span&gt;&lt;/a&gt; branch) by &lt;a href=&quot;https://github.com/Tulon&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Joseph Artsimovich&lt;/span&gt;&lt;/a&gt;&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/Tulon/scantailor/tree/experimental&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Experimental&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://github.com/Tulon&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Joseph Artsimovich&lt;/span&gt;&lt;/a&gt; (Tulon)&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/scantailor/scantailor/tree/enhanced&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Enhanced&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://github.com/pejuko&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Petr Kovář&lt;/span&gt;&lt;/a&gt; (pejuko)&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/scantailor/scantailor/tree/featured&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Featured&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;http://djvu-soft.narod.ru/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Victor Ivanov&lt;/span&gt;&lt;/a&gt; (monday2000)&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/scantailor/scantailor/tree/plus&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Plus&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://github.com/DikBSD&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Vadim Kuznetsov&lt;/span&gt;&lt;/a&gt; (DikBSD)&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/4lex4/scantailor-advanced&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Advanced&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://github.com/4lex4&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;4lex4&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;http://scantailor.org/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;ScanTailor&lt;/span&gt;&lt;/a&gt; (master and &lt;a href=&quot;https://github.com/scantailor/scantailor/tree/qt5&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;qt5&lt;/span&gt;&lt;/a&gt; branch) by &lt;a href=&quot;https://github.com/Tulon&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Joseph Artsimovich&lt;/span&gt;&lt;/a&gt;&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/Tulon/scantailor/tree/experimental&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Experimental&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://github.com/Tulon&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Joseph Artsimovich&lt;/span&gt;&lt;/a&gt; (Tulon)&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/scantailor/scantailor/tree/enhanced&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Enhanced&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://github.com/pejuko&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Petr Kovář&lt;/span&gt;&lt;/a&gt; (pejuko)&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/scantailor/scantailor/tree/featured&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Featured&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;http://djvu-soft.narod.ru/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Victor Ivanov&lt;/span&gt;&lt;/a&gt; (monday2000)&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/scantailor/scantailor/tree/plus&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Plus&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://github.com/DikBSD&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Vadim Kuznetsov&lt;/span&gt;&lt;/a&gt; (DikBSD)&lt;br/&gt;ScanTailor &lt;a href=&quot;https://github.com/4lex4/scantailor-advanced&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Advanced&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://github.com/4lex4&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;4lex4&lt;/span&gt;&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;http://djvu.sourceforge.net/djview4.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;DjView4&lt;/span&gt;&lt;/a&gt; by &lt;a href=&quot;https://leon.bottou.org/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Léon Bottou&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="textFormat">
               <enum>Qt::RichText</enum>
@@ -325,7 +325,7 @@ Russian - Alexander Trufanov</string>
             <x>0</x>
             <y>0</y>
             <width>430</width>
-            <height>1436</height>
+            <height>1210</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -449,7 +449,6 @@ p, li { white-space: pre-wrap; }
   </layout>
  </widget>
  <resources>
-  <include location="../resources/resources.qrc"/>
   <include location="../resources/resources.qrc"/>
  </resources>
  <connections>

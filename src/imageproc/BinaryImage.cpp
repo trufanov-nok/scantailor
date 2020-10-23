@@ -212,7 +212,7 @@ BinaryImage::BinaryImage(
     if (rect.isEmpty()) {
         return;
     } else if (rect.intersected(image.rect()) != rect) {
-        throw std::invalid_argument("BinaryImage: rect exceedes the QImage");
+        throw std::invalid_argument("BinaryImage: rect exceeds the QImage");
     }
 
     switch (image.format()) {
@@ -1410,7 +1410,7 @@ bool operator==(BinaryImage const& lhs, BinaryImage const& rhs)
     return true;
 }
 
-/*====================== BinaryIamge::SharedData ========================*/
+/*====================== BinaryImage::SharedData ========================*/
 
 void
 BinaryImage::SharedData::unref() const

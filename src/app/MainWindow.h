@@ -85,6 +85,9 @@ class OutOfMemoryDialog;
 class QLineF;
 class QRectF;
 class QLayout;
+namespace publish {
+class EncodingProgressWidget;
+}
 
 class MainWindow :
     public QMainWindow,
@@ -148,6 +151,7 @@ signals:
     void NewOpenProjectPanelShown();
     void UpdateStatusBarPageSize();
     void UpdateStatusBarMousePos();
+    void UpdateStatusBarFileSize();
     void toBeRemoved(const std::set<PageId> pages);
 private slots:
     void goFirstPage(bool in_selection = false);
@@ -230,6 +234,8 @@ private slots:
     void displayStatusBarPageSize();
 
     void displayStatusBarMousePos();
+
+    void displayStatusBarFileSize();
 
     void applyUnitsSettingToCoordinates(qreal& x, qreal& y);
 
@@ -319,11 +325,17 @@ private:
 
     bool isOutputFilter(int filter_idx) const;
 
+    bool isPublishFilter() const;
+
+    bool isPublishFilter(int filter_idx) const;
+
     PageView getCurrentView() const;
 
     void updateMainArea();
 
     bool checkReadyForOutput(PageId const* ignore = 0) const;
+
+    bool checkReadyToPublish(PageId const* ignore = 0) const;
 
     void loadPageInteractive(PageInfo const& page);
 
@@ -358,9 +370,6 @@ private:
     BackgroundTaskPtr createCompositeTask(
         PageInfo const& page, int last_filter_idx, bool batch, bool debug);
 
-    IntrusivePtr<CompositeCacheDrivenTask>
-    createCompositeCacheDrivenTask(int last_filter_idx);
-
     void createBatchProcessingWidget();
 
     void updateDisambiguationRecords(PageSequence const& pages);
@@ -391,7 +400,7 @@ private:
     std::unique_ptr<WorkerThread> m_ptrWorkerThread;
     std::unique_ptr<ProcessingTaskQueue> m_ptrBatchQueue;
     std::unique_ptr<ProcessingTaskQueue> m_ptrInteractiveQueue;
-    QStackedLayout* m_pImageFrameLayout;
+    QVBoxLayout* m_pImageFrameLayout;
     QStackedLayout* m_pOptionsFrameLayout;
     QPointer<FilterOptionsWidget> m_ptrOptionsWidget;
     QPointer<FixDpiDialog> m_ptrFixDpiDialog;
@@ -414,6 +423,12 @@ private:
 //Export_Subscans
 public Q_SLOTS:
     void exportRequestedReprocessing(const PageId& page_id, QImage* fore_subscan);
+    void setPublishProgressPanelVisible(bool visible);
+private slots:
+    void on_actionManageSharedDictionaries_triggered();
+    void on_actionManageContents_triggered();
+    void on_actionSetBundledFilename_triggered();
+
 private:
     exporting::ExportDialog* m_p_export_dialog;
     exporting::ExportThread* m_p_export_thread;
@@ -432,6 +447,7 @@ private:
 #ifdef HAVE_CANBERRA
     CanberraSoundPlayer m_canberraPlayer;
 #endif
+    std::unique_ptr<publish::EncodingProgressWidget> m_ptrPublishProgressWidget;
 };
 
 class PageSelectionProviderImpl : public PageSelectionProvider

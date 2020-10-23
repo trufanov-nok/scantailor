@@ -19,6 +19,7 @@
 #include "ThumbnailPixmapCache.h"
 #include "ImageId.h"
 #include "ImageLoader.h"
+#include "DjVuReader.h"
 #include "AtomicFileOverwriter.h"
 #include "RelinkablePath.h"
 #include "OutOfMemoryHandler.h"
@@ -58,7 +59,7 @@ class ThumbnailPixmapCache::Item
 public:
     enum Status {
         /**
-         * The background threaed hasn't touched it yet.
+         * The background thread hasn't touched it yet.
          */
         QUEUED,
 
@@ -124,6 +125,7 @@ public:
     void ensureThumbnailExists(ImageId const& image_id, QImage const& image);
 
     void recreateThumbnail(ImageId const& image_id, QImage const& image);
+    void recreateThumbnail(ImageId const& image_id);
 protected:
     virtual void run();
 
@@ -159,9 +161,8 @@ private:
 
     void backgroundProcessing();
 
-    static QImage loadSaveThumbnail(
-        ImageId const& image_id, QString const& thumb_dir,
-        QSize const& max_thumb_size);
+    static QImage loadSaveThumbnail(ImageId const& image_id, QString const& thumb_dir,
+        QSize const& max_thumb_size, bool no_cache = false);
 
     static QString getThumbFilePath(
         ImageId const& image_id, QString const& thumb_dir);
@@ -327,6 +328,12 @@ ThumbnailPixmapCache::recreateThumbnail(
     m_ptrImpl->recreateThumbnail(image_id, image);
 }
 
+void
+ThumbnailPixmapCache::recreateThumbnail(ImageId const& image_id)
+{
+    m_ptrImpl->recreateThumbnail(image_id);
+}
+
 /*======================= ThumbnailPixmapCache::Impl ========================*/
 
 ThumbnailPixmapCache::Impl::Impl(
@@ -349,7 +356,7 @@ ThumbnailPixmapCache::Impl::Impl(
         m_shuttingDown(false)
 {
     // Note that QDir::mkdir() will fail if the parent directory,
-    // that is $OUT/cache doesn't exist. We want that behaviour,
+    // that is $OUT/cache doesn't exist. We want that behavior,
     // as otherwise when loading a project from a different machine,
     // a whole bunch of bogus directories would be created.
     QDir().mkdir(m_thumbDir);
@@ -581,10 +588,22 @@ ThumbnailPixmapCache::Impl::recreateThumbnail(
         // We don't know if the other thread has already loaded
         // the thumbnail or not.  In case it did, again we
         // don't know if it loaded the old or new version.
-        // Well, let's just pretend the thumnail was loaded
+        // Well, let's just pretend the thumbnail was loaded
         // (or failed to load) before we wrote the new version.
         break;
     }
+}
+
+void
+ThumbnailPixmapCache::Impl::recreateThumbnail(ImageId const& image_id)
+{
+    QMutexLocker locker(&m_mutex);
+    QString const thumb_dir(m_thumbDir);
+    QSize const max_thumb_size(m_maxThumbSize);
+    locker.unlock();
+
+    const QImage image = loadSaveThumbnail(image_id, thumb_dir, max_thumb_size, true);
+    recreateThumbnail(image_id, image);
 }
 
 void
@@ -677,16 +696,26 @@ ThumbnailPixmapCache::Impl::backgroundProcessing()
 QImage
 ThumbnailPixmapCache::Impl::loadSaveThumbnail(
     ImageId const& image_id, QString const& thumb_dir,
-    QSize const& max_thumb_size)
+    QSize const& max_thumb_size, bool no_cache)
 {
     QString const thumb_file_path(getThumbFilePath(image_id, thumb_dir));
 
-    QImage image(ImageLoader::load(thumb_file_path, 0));
-    if (!image.isNull()) {
-        return image;
+    QImage image;
+
+    if (!no_cache) {
+        image = ImageLoader::load(thumb_file_path, 0);
+        if (!image.isNull()) {
+            return image;
+        }
     }
 
-    image = ImageLoader::load(image_id);
+    QFileInfo info(image_id.filePath());
+    if (info.suffix().toLower().startsWith("djv")) {
+        image = DjVuReader::load(image_id);
+    } else {
+        image = ImageLoader::load(image_id);
+    }
+
     if (image.isNull()) {
         return QImage();
     }
@@ -830,8 +859,16 @@ ThumbnailPixmapCache::Impl::processLoadResult(LoadResultEvent* result)
 
             item.status = Item::LOAD_FAILED;
 
-            // Move to the end of load queue.
-            m_loadQueue.relocate(m_loadQueue.end(), lq_it);
+            QFileInfo fi(item.imageId.filePath());
+            bool is_djvu = fi.suffix().toLower().startsWith("djv");
+            if (!is_djvu) {
+                // Move to the end of load queue.
+                m_loadQueue.relocate(m_loadQueue.end(), lq_it);
+            } else {
+                // we wish to try one more time if it was a thumb for djvu doc
+                // as currently djvu loader may fail at some load attempts and work fine at others.
+                removeItemLocked(rq_it);
+            }
         } else {
             assert(result->status() == ThumbnailLoadResult::REQUEST_EXPIRED);
 

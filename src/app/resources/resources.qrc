@@ -69,5 +69,12 @@
         <file>icons/multi_choice.png</file>
         <file>icons/gimp-reset.png</file>
         <file>images/empty-page.png</file>
+        <file>icons/document-multiple.png</file>
+        <file>icons/document-encrypted.png</file>
+        <file>icons/checkmark.png</file>
+        <file>icons/djvulibre-mime-prebuilt-hi24-djvu-hovered.png</file>
+        <file>icons/djvulibre-mime-prebuilt-hi24-djvu-pressed.png</file>
+        <file>icons/djvulibre-mime-prebuilt-hi24-djvu.png</file>
+        <file>icons/djvulibre-mime-prebuilt-hi24-djvu-disabled.png</file>
     </qresource>
 </RCC>

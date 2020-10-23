@@ -30,6 +30,8 @@
 #include "qdjvu.h"
 #include "qdjvuwidget.h"
 
+#include "settings/globalstaticsettings.h"
+
 #include <QApplication>
 #include <QBitmap>
 #include <QCursor>
@@ -828,6 +830,7 @@ public:
   int         sdpi;             // screen dpi
   ddjvu_format_t *renderFormat; // ddjvu format
   QList<Cache>    pixelCache;   // pixel cache
+  QList<Cache>    pixelCacheAlt;// pixel cache for alternative image
   int         devicePixelRatio; // device pixel ratio for cached images
   // gui
   bool        keyboardEnabled;  // obey keyboard commands
@@ -924,6 +927,11 @@ public slots:
   void info(QString msg);
   void makeToolTip();
   void animate();
+
+private:
+  QString alternativeImageFilename;
+  std::unique_ptr<QImage> alternativeImagePtr;
+  bool displayAlternative;
 };
 
 QDjVuPrivate::~QDjVuPrivate()
@@ -1035,6 +1043,7 @@ QDjVuPrivate::QDjVuPrivate(QDjVuWidget *widget)
           this, SLOT(makePageRequests()) );
   connect(widget->verticalScrollBar(), SIGNAL(sliderReleased()),
           this, SLOT(makePageRequests()) );
+  displayAlternative = false;
 }
 
 
@@ -2031,6 +2040,7 @@ QDjVuWidget::~QDjVuWidget()
 void
 QDjVuPrivate::initWidget(bool opengl)
 {
+
   // set widget policies
   widget->setFocusPolicy(Qt::StrongFocus);
   widget->setSizePolicy(QSizePolicy::MinimumExpanding, 
@@ -2237,6 +2247,8 @@ QDjVuWidget::setDocument(QDjVuDocument *d)
       priv->cursorPoint = QPoint(0,0);
       priv->layoutChange = 0;
       priv->changeLayout(CHANGE_STATS|CHANGE_PAGES|UPDATE_ALL);
+      priv->alternativeImageFilename.clear();
+      priv->alternativeImagePtr.reset();
     }
 }
 
@@ -3900,6 +3912,14 @@ QDjVuWidget::addHighlight(int pageno, int x, int y, int w, int h,
     }
 }
 
+void
+QDjVuWidget::setAlternativeImage(const QString& fname)
+{
+    if (QSettings().value(_key_output_show_orig_on_space, _key_output_show_orig_on_space_def).toBool()) {
+        priv->alternativeImageFilename = fname;
+    }
+}
+
 
 /*! Returns the url string for the maparea located
   below the pointer. This function is valid when called from signal 
@@ -4120,7 +4140,90 @@ QDjVuWidget::getSegmentForRect(const QRect &rect, int pageNo)
   return ans;
 }
 
+QImage
+QDjVuWidget::renderImageForRect(int pageno, const QRect& r) const
+{
+    // simplified adaptation of DjVuLibre's QDjViewTiffExporter::doPage()
+    QDjVuPage *page = priv->pageData[pageno].page;
+    ddjvu_rect_t page_rect;
+    page_rect.x = page_rect.y = 0;
+    page_rect.w = ddjvu_page_get_width(*page);
+    page_rect.h = ddjvu_page_get_height(*page);
 
+
+    ddjvu_rect_t image_rect;
+    if (r.isEmpty()) {
+        image_rect = page_rect;
+    } else {
+        image_rect.x = r.x(); image_rect.y = r.y();
+        image_rect.w = r.width();
+        image_rect.h = r.height();
+    }
+
+    ddjvu_render_mode_t mode = DDJVU_RENDER_COLOR;
+
+    QDjVuWidget::DisplayMode display_mode = displayMode();
+    if (display_mode == QDjVuWidget::DISPLAY_STENCIL) {
+        mode = DDJVU_RENDER_BLACK;
+    } else if (display_mode == QDjVuWidget::DISPLAY_BG) {
+        mode = DDJVU_RENDER_BACKGROUND;
+    } else if (display_mode == QDjVuWidget::DISPLAY_FG) {
+        mode = DDJVU_RENDER_FOREGROUND;
+    }
+
+    ddjvu_page_type_t type = ddjvu_page_get_type(*page);
+    ddjvu_format_style_t style = DDJVU_FORMAT_RGB24;
+    QImage::Format qimage_format = QImage::Format_RGB888;
+    if (mode == DDJVU_RENDER_BLACK || type == DDJVU_PAGETYPE_BITONAL) {
+        style = DDJVU_FORMAT_MSBTOLSB;
+        qimage_format = QImage::Format_Mono;
+    }
+
+    ddjvu_format_t * fmt = ddjvu_format_create(style, 0, 0);
+    ddjvu_format_set_row_order(fmt, 1);
+    ddjvu_format_set_gamma(fmt, 2.2);
+
+    // render and save
+    char white = (char)0xff;
+    int rowsize = image_rect.w * 3;
+
+    if (style == DDJVU_FORMAT_MSBTOLSB) {
+        white = 0x00;
+        rowsize = (image_rect.w + 7) / 8;
+    }
+
+    QImage res_image;
+    char *image = nullptr;
+    if (! (image = (char*)malloc(rowsize * image_rect.h))) {
+        throw(tr("renderImageForRect: Out of memory."));
+    } else {
+        if (! ddjvu_page_render(*page, mode, &page_rect, &image_rect, fmt, rowsize, image)) {
+                memset(image, white, rowsize * image_rect.h);
+        }
+
+        res_image = QImage(image_rect.w, image_rect.h, qimage_format);
+        const int bpl = res_image.bytesPerLine();
+        assert(bpl >= rowsize);
+        char *s = image;
+        for (int i=0; i<(int)image_rect.h; i++, s+=rowsize) {
+            memcpy(res_image.scanLine(i), s, rowsize);
+        }
+
+        if (style == DDJVU_FORMAT_MSBTOLSB) {
+            res_image.invertPixels();
+        }
+    }
+
+    if (fmt) {
+        ddjvu_format_release(fmt);
+    }
+
+    if (image) {
+        free(image);
+    }
+
+    return res_image;
+}
 
 /*! Indicate whether the page size if known */
 
@@ -4459,6 +4562,17 @@ QDjVuPrivate::paintPage(QPainter &paint, Page *p, const QRegion &region)
   // check
   if (region.isEmpty())
     return true;
+
+  if (displayAlternative) {
+      if (!alternativeImagePtr) {
+          alternativeImagePtr.reset(new QImage(alternativeImageFilename));
+      }
+      if (alternativeImagePtr->isNull()) {
+          paint.fillRect(visibleRect, Qt::white);
+          return true;
+      }
+  }
+
   if (p->dpi<=0 || p->page==0)
     return false;
   // invalidate cache when device pixel ratio changes
@@ -4470,15 +4584,17 @@ QDjVuPrivate::paintPage(QPainter &paint, Page *p, const QRegion &region)
 #else
   int dpr = 1;
 #endif
+
   // caching
+  QList<Cache>& cur_pixelCache = !displayAlternative ? pixelCache : pixelCacheAlt;
   QList<Cache*> cachelist;
   QRegion remainder = region;
   QPoint deskToView = - visibleRect.topLeft();
-  for (int i=0; i<pixelCache.size(); i++)
+  for (int i=0; i<cur_pixelCache.size(); i++)
     {
-      QRect rect = pixelCache[i].rect.translated(deskToView);
+      QRect rect = cur_pixelCache[i].rect.translated(deskToView);
       if (! region.intersects(rect)) continue;
-      cachelist << &pixelCache[i];
+      cachelist << &cur_pixelCache[i];
       remainder -= rect;
     }
   // cover
@@ -4550,13 +4666,25 @@ QDjVuPrivate::paintPage(QPainter &paint, Page *p, const QRegion &region)
 #endif
       rot = p->initialRot + rotation;
       ddjvu_page_set_rotation(*dp, (ddjvu_page_rotation_t)(rot & 0x3));
-      if (! ddjvu_page_render(*dp, mode, &pr, &rr, renderFormat,
-                              img.bytesPerLine(), (char*)img.bits() ))
-        return false;
-      paintHiddenText(img, p, r);
-      if (invertLuminance)
-        invert_luminance(img);
-      paintMapAreas(img, p, r, true);
+      if (!displayAlternative) {
+          if (! ddjvu_page_render(*dp, mode, &pr, &rr, renderFormat,
+                                  img.bytesPerLine(), (char*)img.bits() ))
+              return false;
+          paintHiddenText(img, p, r);
+          if (invertLuminance)
+              invert_luminance(img);
+          paintMapAreas(img, p, r, true);
+      } else {
+          if (rot) {
+              QTransform trans;
+              img = alternativeImagePtr->transformed(trans.rotate(-90*rot));
+          } else {
+              img = *alternativeImagePtr; // shadow copy
+          }
+
+          img = img.scaled(p->rect.size());
+          img = img.copy(r.translated(-p->rect.topLeft()));
+      }
       addToPixelCache(r, img);
       paintMapAreas(img, p, r, false);
       r.translate(deskToView);
@@ -4579,7 +4707,12 @@ QDjVuPrivate::paintAll(QPainter &paint, const QRegion &paintRegion)
   if (pageLayout.isEmpty())
     {
       bool waiting = (docReady || !docFailed) && !docStopped;
-      QRect rect(QPoint(borderSize,borderSize), unknownSize);
+      // patched by truf to get a more fancy look for stub page
+      QSize viewport = widget->viewport()? widget->viewport()->size() : widget->size();
+      viewport -= unknownSize;
+      viewport /= 2;
+      // other option is /*QPoint(borderSize,borderSize)*/, /*vewport - 2*QSize(borderSize,borderSize)*/
+      QRect rect(QPoint(viewport.width(), viewport.height()), unknownSize);
       widget->paintEmpty(paint, rect, waiting, docStopped, docFailed);
       widget->paintDesk(paint, paintRegion-rect);
       widget->paintFrame(paint, rect, shadowSize);
@@ -4772,6 +4905,7 @@ QDjVuPrivate::eventFilter(QObject *, QEvent *event)
     case QEvent::KeyRelease:
       Qt::KeyboardModifiers change = Qt::NoModifier;
       QKeyEvent *kevent = (QKeyEvent*)event;
+
       switch (kevent->key())
         {
         case Qt::Key_Shift:
@@ -5119,6 +5253,24 @@ QDjVuWidget::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
+void
+QDjVuWidget::keyReleaseEvent(QKeyEvent *event)
+{
+    if (priv->keyboardEnabled)
+      {
+        // Capturing this signal can override any key binding
+
+        if (!event->isAutoRepeat() &&
+                !priv->alternativeImageFilename.isEmpty() &&
+                GlobalStaticSettings::checkKeysMatch(PageViewDisplayOriginal,
+                                                     event->modifiers(),
+                                                     (Qt::Key)event->key())) {
+                priv->displayAlternative = false;
+                viewport()->update();
+        }
+    }
+}
+
 /*! Override \a QAbstractScrollArea virtual function. */
 void 
 QDjVuWidget::keyPressEvent(QKeyEvent *event)
@@ -5130,6 +5282,16 @@ QDjVuWidget::keyPressEvent(QKeyEvent *event)
       emit keyPressSignal(event, done);
       if (done) 
         return;
+
+      if (!event->isAutoRepeat() &&
+              !priv->alternativeImageFilename.isEmpty() &&
+              GlobalStaticSettings::checkKeysMatch(PageViewDisplayOriginal,
+                                                   event->modifiers(),
+                                                   (Qt::Key)event->key())) {
+
+          priv->displayAlternative = true;
+          viewport()->update();
+      }
       // Standard key bindings
       Qt::KeyboardModifiers modifiers = event->modifiers();
       switch(event->key())
@@ -5510,7 +5672,7 @@ QDjVuWidget::paintEmpty(QPainter &p, const QRect &rect,
 {
   QString name;
   QPixmap pixmap;
-  if (waiting)
+  if (waiting || !priv->doc) // truf: i'm using setDocument(0) to reset page and don't like how djvu_fail.png looks for this case
     name = ":/images/djvu_logo.png";
   else if (stopped)
     name = ":/images/djvu_stop.png";

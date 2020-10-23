@@ -137,7 +137,7 @@ public:
     void ensureThumbnailExists(ImageId const& image_id, QImage const& image);
 
     /**
-     * \brief Re-create and replace the existing thumnail.
+     * \brief Re-create and replace the existing thumbnail.
      *
      * \param image_id The identifier of the full size image and its thumbnail.
      * \param image The full-size image or a thumbnail.
@@ -145,6 +145,8 @@ public:
      * \note This function may be called from any thread, even concurrently.
      */
     void recreateThumbnail(ImageId const& image_id, QImage const& image);
+
+    void recreateThumbnail(ImageId const& image_id);
 private:
     class Item;
     class Impl;

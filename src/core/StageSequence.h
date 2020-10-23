@@ -36,6 +36,9 @@ class PageId;
 class ProjectPages;
 class PageSelectionAccessor;
 class AbstractRelinker;
+class OutputFileNameGenerator;
+class ThumbnailPixmapCache;
+class CompositeCacheDrivenTask;
 
 class StageSequence : public RefCountable
 {
@@ -133,6 +136,14 @@ public:
     {
         return m_publishFilterIdx;
     }
+
+    IntrusivePtr<CompositeCacheDrivenTask>
+    createCompositeCacheDrivenTask(OutputFileNameGenerator& name_generator, int const last_filter_idx);
+
+    void setOutputFileNameGenerator(OutputFileNameGenerator* outputFileNameGenerator, ThumbnailPixmapCache* cache) {
+        m_ptrPublishFilter->setOutputFileNameGenerator(outputFileNameGenerator, cache);
+    }
+
 private:
     IntrusivePtr<fix_orientation::Filter> m_ptrFixOrientationFilter;
     IntrusivePtr<page_split::Filter> m_ptrPageSplitFilter;

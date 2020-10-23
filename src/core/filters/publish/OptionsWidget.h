@@ -25,9 +25,13 @@
 #include "IntrusivePtr.h"
 #include "PageSelectionAccessor.h"
 
+class ProjectPages;
+class QDjVuWidget;
+
 namespace publish
 {
 
+class Filter;
 class Settings;
 
 class OptionsWidget :
@@ -35,20 +39,43 @@ class OptionsWidget :
 {
     Q_OBJECT
 public:
-    OptionsWidget(IntrusivePtr<Settings> const& settings,
-                  PageSelectionAccessor const& page_selection_accessor);
+    OptionsWidget(Filter* filter, PageSelectionAccessor const& page_selection_accessor);
 
     virtual ~OptionsWidget();
 
-    void preUpdateUI(QString const& filename);
+    void preUpdateUI(const PageId &page_id);
 
     void postUpdateUI();
+    void paintHighlights();
+public slots:
+    void on_lblDjbzId_linkActivated(const QString &/*link*/);
+    void rectSelected(const QPoint &pointerPos, const QRect &rect);
+private slots:
+    void on_cbScaleMethod_currentIndexChanged(int index);
+    void on_sbBSF_valueChanged(int arg1);
+    void on_cbSmooth_clicked(bool checked);
+    void on_cbErosion_clicked(bool checked);
+    void on_cbClean_clicked(bool checked);
+    void on_lblTextColorValue_linkActivated(const QString &link);
+    void on_lblPageTitleVal_linkActivated(const QString &link);
 
+    void on_lblPageRotationVal_linkActivated(const QString &link);
+
+protected:
+    virtual void resizeEvent(QResizeEvent *event) override;
+private:
+    void showContextMenu(const QPoint &pos, const QRect &rect, bool is_selection = false);
+    bool saveImageFile(const QImage& image);
 private:
 
-    IntrusivePtr<Settings> m_ptrSettings;
+    Filter* m_filter;
+    Settings* m_settings;
+    QDjVuWidget* m_djvu;
+    int m_djvu_mode;
     PageSelectionAccessor m_pageSelectionAccessor;
-    QString m_filename;
+    PageId m_pageId;
+    bool m_delayed_update;
+    QString m_recent_folder;
 };
 
 } // namespace publish

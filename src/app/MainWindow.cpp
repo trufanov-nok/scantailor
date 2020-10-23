@@ -65,6 +65,7 @@
 #include "OutOfMemoryDialog.h"
 #include "QtSignalForwarder.h"
 #include "StartBatchProcessingDialog.h"
+#include "ExportSuggestions.h"
 
 #include "filters/fix_orientation/Filter.h"
 #include "filters/fix_orientation/Task.h"
@@ -87,6 +88,7 @@
 #include "filters/publish/Filter.h"
 #include "filters/publish/Task.h"
 #include "filters/publish/CacheDrivenTask.h"
+#include "filters/publish/EncodingProgressWidget.h"
 
 #include "LoadFileTask.h"
 #include "CompositeCacheDrivenTask.h"
@@ -180,7 +182,7 @@ MainWindow::MainWindow()
 
     m_ptrTabbedDebugImages.reset(new TabbedDebugImages);
 
-    m_pImageFrameLayout = new QStackedLayout(imageViewFrame);
+    m_pImageFrameLayout = new QVBoxLayout(imageViewFrame);
     m_pOptionsFrameLayout = new QStackedLayout(filterOptions);
 
     addAction(actionFirstPage);
@@ -462,11 +464,33 @@ MainWindow::switchToNewProject(
     m_outFileNameGen = OutputFileNameGenerator(
                            disambiguator, out_dir, pages->layoutDirection()
                        );
+
     // These two need to go in this order.
     updateDisambiguationRecords(pages->toPageSequence(IMAGE_VIEW));
 
     // Recreate the stages and load their state.
     m_ptrStages.reset(new StageSequence(pages, newPageSelectionAccessor()));
+
+
+    connect(m_ptrStages->publishFilter().get(), &publish::Filter::setProgressPanelVisible,
+            this, &MainWindow::setPublishProgressPanelVisible);
+    connect(m_ptrStages->publishFilter().get(), &publish::Filter::enableBundledDjVuButton,
+            filterList, &StageListView::enableBundledDjVuButton);
+    connect(m_ptrStages->publishFilter().get(), &publish::Filter::setBundledDjVuDoc,
+            filterList, &StageListView::setBundledDjVuDoc);
+
+    QString suggested_djvu_name;
+    if (!m_projectFile.isEmpty()) {
+        QFileInfo fi(m_projectFile);
+        suggested_djvu_name = m_outFileNameGen.outDir() + "/" + fi.baseName() + ".djvu";
+    } else {
+        QSettings settings;
+        suggested_djvu_name = settings.value(_key_project_last_input_dir).toString();
+        // suggest folder name as default project name
+        suggested_djvu_name += '/' + QDir(suggested_djvu_name).dirName() + ".djvu";
+    }
+    m_ptrStages->publishFilter()->setDjVuFilenameSuggestion(suggested_djvu_name);
+
     if (project_reader) {
         project_reader->readFilterSettings(m_ptrStages->filters());
     }
@@ -493,18 +517,14 @@ MainWindow::switchToNewProject(
     m_ptrContentBoxPropagator.reset(
         new ContentBoxPropagator(
             m_ptrStages->pageLayoutFilter(),
-            createCompositeCacheDrivenTask(
-                m_ptrStages->selectContentFilterIdx()
-            )
+            m_ptrStages->createCompositeCacheDrivenTask(m_outFileNameGen, m_ptrStages->selectContentFilterIdx())
         )
     );
 
     m_ptrPageOrientationPropagator.reset(
         new PageOrientationPropagator(
             m_ptrStages->pageSplitFilter(),
-            createCompositeCacheDrivenTask(
-                m_ptrStages->fixOrientationFilterIdx()
-            )
+            m_ptrStages->createCompositeCacheDrivenTask(m_outFileNameGen, m_ptrStages->fixOrientationFilterIdx())
         )
     );
 
@@ -515,6 +535,8 @@ MainWindow::switchToNewProject(
     } else {
         m_ptrThumbnailCache = Utils::createThumbnailCache(m_outFileNameGen.outDir());
     }
+
+    m_ptrStages->setOutputFileNameGenerator(&m_outFileNameGen, m_ptrThumbnailCache.get());
 
     resetThumbSequence(currentPageOrderProvider());
 
@@ -589,6 +611,7 @@ MainWindow::createBatchProcessingWidget()
         ":/icons/stop-big.png",
         ":/icons/stop-big-hovered.png",
         ":/icons/stop-big-pressed.png",
+        "",
         m_ptrBatchProcessingWidget.get()
     );
     stop_btn->setStatusTip(tr("Stop batch processing"));
@@ -641,7 +664,7 @@ MainWindow::setupThumbView()
     }
 }
 
-int _wheel_val_sum_thumbs = 0;
+static int _wheel_val_sum_thumbs = 0;
 bool MainWindow::eventFilter(QObject* obj, QEvent* ev)
 {
     if (obj == filterOptions && ev->type() == QEvent::Resize) {
@@ -715,6 +738,13 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev)
         displayStatusBarPageSize();
     }
 
+    if (obj == statusLabelFileSize && ev->type() == QEvent::MouseButtonRelease) {
+            if (statusLabelFileSize->selectedText().isEmpty()) {
+                StatusBarProvider::toggleStatusLabelFileSizeDisplayMode();
+            }
+            displayStatusBarFileSize();
+        }
+
     if (obj == statusBar() && ev->type() == StatusBarProvider::StatusBarEventType) {
         QStatusBarProviderEvent* sb_ev = static_cast<QStatusBarProviderEvent*>(ev);
         if (sb_ev->testFlag(QStatusBarProviderEvent::MousePosChanged)) {
@@ -723,6 +753,10 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev)
 
         if (sb_ev->testFlag(QStatusBarProviderEvent::PhysSizeChanged)) {
             emit UpdateStatusBarPageSize();
+        }
+
+        if (sb_ev->testFlag(QStatusBarProviderEvent::FileSizeChanged)) {
+            emit UpdateStatusBarFileSize();
         }
 
         sb_ev->accept();
@@ -860,7 +894,7 @@ MainWindow::resetThumbSequence(
 {
     if (m_ptrThumbnailCache.get()) {
         IntrusivePtr<CompositeCacheDrivenTask> const task(
-            createCompositeCacheDrivenTask(m_curFilter)
+            m_ptrStages->createCompositeCacheDrivenTask(m_outFileNameGen, m_curFilter)
         );
 
         m_ptrThumbSequence->setThumbnailFactory(
@@ -986,6 +1020,7 @@ MainWindow::setOptionsWidget(FilterOptionsWidget* widget, Ownership const owners
 
     m_pOptionsFrameLayout->addWidget(widget);
     m_ptrOptionsWidget = widget;
+    widget->show();
 
     // We use an asynchronous connection here, because the slot
     // will probably delete the options panel, which could be
@@ -1044,6 +1079,8 @@ MainWindow::setImageWidget(
         }
         m_pImageFrameLayout->addWidget(m_ptrTabbedDebugImages.get());
     }
+
+    widget->show();
 }
 
 void
@@ -1497,6 +1534,15 @@ MainWindow::filterSelectionChanged(QItemSelection const& selected)
     updateMainArea();
 
     StatusBarProvider::changeFilterIdx(m_curFilter);
+    const bool v = (m_curFilter == m_ptrStages->publishFilterIdx());
+    statusLabelFileSize->setVisible(v);
+    statusLabelPhysSize->setVisible(!v);
+
+    const bool enabled = isProjectLoaded() && isPublishFilter();
+    actionManageContents->setEnabled(enabled);
+    actionSetMetadata->setEnabled(enabled);
+    actionManageSharedDictionaries->setEnabled(enabled);
+//    actionSetBundledFilename->setEnabled(enabled);
 }
 
 void MainWindow::switchFilter1()
@@ -1597,13 +1643,30 @@ MainWindow::startBatchProcessing()
 
     PageInfo start_page = processAll ? m_ptrThumbSequence->firstPage() : m_ptrThumbSequence->selectionLeader();
     PageInfo page = start_page;
-    for (; !page.isNull(); page = m_ptrThumbSequence->nextPage(page.id())) {
-        m_ptrBatchQueue->addProcessingTask(
-            page, createCompositeTask(page, m_curFilter, /*batch=*/true, m_debug)
-        );
+
+    int pages_in_queue = 0;
+    if (isPublishFilter()) {
+        QVector<PageInfo> pages_to_process;
+        for (; !page.isNull(); page = m_ptrThumbSequence->nextPage(page.id())) {
+            pages_to_process += page;
+        }
+        pages_to_process = m_ptrStages->publishFilter()->filterBatchPages(pages_to_process);
+        for (const PageInfo& page: qAsConst(pages_to_process)) {
+            m_ptrBatchQueue->addProcessingTask(
+                        page, createCompositeTask(page, m_curFilter, /*batch=*/true, m_debug)
+                        );
+        }
+        pages_in_queue = pages_to_process.count();
+    } else {
+        for (; !page.isNull(); page = m_ptrThumbSequence->nextPage(page.id())) {
+            m_ptrBatchQueue->addProcessingTask(
+                        page, createCompositeTask(page, m_curFilter, /*batch=*/true, m_debug)
+                        );
+            pages_in_queue++;
+        }
     }
 
-    m_ptrBatchQueue->startProgressTracking(m_ptrThumbSequence->count());
+    m_ptrBatchQueue->startProgressTracking(pages_in_queue);
 
     focusButton->setChecked(true);
 
@@ -1912,10 +1975,11 @@ MainWindow::openProject(QString const& project_file)
     }
 
     QDomDocument doc;
-    if (!doc.setContent(&file)) {
+    QString errorMsg; int errorLine; int errorColumn;
+    if (!doc.setContent(&file, false, &errorMsg, &errorLine, &errorColumn)) {
         QMessageBox::warning(
             this, tr("Error"),
-            tr("The project file is broken.")
+                    QString(tr("The project file is broken.\nError message: %1\nLine: %2, Column: %3")).arg(errorMsg).arg(errorLine).arg(errorColumn)
         );
         resumeAutoSaveTimer();
         return;
@@ -2013,7 +2077,7 @@ MainWindow::ExportOutput(exporting::ExportSettings settings)
 
     if (m_ptrThumbnailCache.get()) {
         IntrusivePtr<CompositeCacheDrivenTask> const task(
-            createCompositeCacheDrivenTask(m_ptrStages->outputFilterIdx())
+            m_ptrStages->createCompositeCacheDrivenTask(m_outFileNameGen, m_ptrStages->outputFilterIdx())
         );
 
         m_ptrThumbSequence_export->setThumbnailFactory(
@@ -2102,6 +2166,7 @@ MainWindow::ExportOutput(exporting::ExportSettings settings)
     m_p_export_thread = new exporting::ExportThread(settings,
                                                     outpaths_vector,
                                                     export_dir,
+                                                    *m_ptrStages->outputFilter()->exportSuggestions(),
                                                     this);
 
     connect(m_p_export_thread, &exporting::ExportThread::finished, this, [=](){
@@ -2222,6 +2287,9 @@ MainWindow::removeWidgetsFromLayout(QLayout* layout)
 {
     QLayoutItem* child;
     while ((child = layout->takeAt(0))) {
+        if (child->widget()) {
+            child->widget()->hide();
+        }
         delete child;
     }
 }
@@ -2248,6 +2316,12 @@ MainWindow::updateProjectActions()
     actionExport->setEnabled(loaded);
     actionGoToPage->setEnabled(loaded);
     actionSelectPages->setEnabled(loaded);
+    if (!loaded) {
+        actionManageContents->setEnabled(false);
+        actionSetMetadata->setEnabled(false);
+        actionManageSharedDictionaries->setEnabled(false);
+//        actionSetBundledFilename->setEnabled(false);
+    }
     if (m_ptrStages.get()) {
         // just in case it ever changes
         StatusBarProvider::setOutputFilterIdx(m_ptrStages->outputFilterIdx());
@@ -2296,6 +2370,18 @@ MainWindow::isOutputFilter(int const filter_idx) const
     return (filter_idx == m_ptrStages->outputFilterIdx());
 }
 
+bool
+MainWindow::isPublishFilter() const
+{
+    return isPublishFilter(m_curFilter);
+}
+
+bool
+MainWindow::isPublishFilter(int const filter_idx) const
+{
+    return (filter_idx == m_ptrStages->publishFilterIdx());
+}
+
 PageView
 MainWindow::getCurrentView() const
 {
@@ -2333,6 +2419,14 @@ MainWindow::checkReadyForOutput(PageId const* ignore) const
            );
 }
 
+bool
+MainWindow::checkReadyToPublish(PageId const* ignore) const
+{
+    return m_ptrStages->outputFilter()->checkReadyToPublish(
+                m_outFileNameGen, *m_ptrPages, ignore
+    );
+}
+
 void
 MainWindow::loadPageInteractive(PageInfo const& page)
 {
@@ -2340,19 +2434,25 @@ MainWindow::loadPageInteractive(PageInfo const& page)
 
     m_ptrInteractiveQueue->cancelAndClear();
 
-    if (isOutputFilter() && !checkReadyForOutput(&page.id())) {
+    if ( ( isOutputFilter() && !checkReadyForOutput(&page.id()) ) ||
+         ( isPublishFilter() && !checkReadyToPublish(&page.id()) ) ) {
         filterList->setBatchProcessingPossible(false);
 
         // Switch to the first page - the user will need
         // to process all pages in batch mode.
         m_ptrThumbSequence->setSelection(m_ptrThumbSequence->firstPage().id());
 
-        QString const err_text(
-            tr("Output is not yet possible, as the final size"
-               " of pages is not yet known.\nTo determine it,"
-               " run batch processing at \"Select Content\" or"
-               " \"Page Layout\".")
-        );
+        QString err_text;
+        if (isOutputFilter()) {
+            err_text = tr("Output is not yet possible, as the final size"
+                                  " of pages is not yet known.\nTo determine it,"
+                                  " run batch processing at \"Select Content\" or"
+                                  " \"Page Layout\".");
+        } else {
+            err_text = tr("Publishing is not yet possible, as all pages aren't"
+                                  " processed and outputted yet.\nTo process them,"
+                                  " run batch processing at \"Output\" step.");
+        }
 
         removeFilterOptionsWidget();
         setImageWidget(new ErrorWidget(err_text), TRANSFER_OWNERSHIP);
@@ -2533,7 +2633,7 @@ MainWindow::showInsertFileDialog(BeforeOrAfter before_or_after, ImageId const& e
     protected:
         virtual bool filterAcceptsRow(int source_row, QModelIndex const& source_parent) const override
         {
-            QModelIndex const idx(index(source_row, 0, source_parent));
+            QModelIndex const idx(sourceModel()->index(source_row, 0, source_parent));
             QVariant const data(idx.data(QFileSystemModel::FilePathRole));
             if (data.isNull()) {
                 return true;
@@ -2923,7 +3023,7 @@ MainWindow::createCompositeTask(
 
     if (last_filter_idx >= m_ptrStages->publishFilterIdx()) {
         publish_task = m_ptrStages->publishFilter()->createTask(
-                    page.id(), batch
+                    page.id(), m_ptrThumbnailCache, m_outFileNameGen, batch
                     );
         debug = false;
     }
@@ -2972,51 +3072,6 @@ MainWindow::createCompositeTask(
                    page, m_ptrThumbnailCache, m_ptrPages, fix_orientation_task
                )
            );
-}
-
-IntrusivePtr<CompositeCacheDrivenTask>
-MainWindow::createCompositeCacheDrivenTask(int const last_filter_idx)
-{
-    IntrusivePtr<fix_orientation::CacheDrivenTask> fix_orientation_task;
-    IntrusivePtr<page_split::CacheDrivenTask> page_split_task;
-    IntrusivePtr<deskew::CacheDrivenTask> deskew_task;
-    IntrusivePtr<select_content::CacheDrivenTask> select_content_task;
-    IntrusivePtr<page_layout::CacheDrivenTask> page_layout_task;
-    IntrusivePtr<output::CacheDrivenTask> output_task;
-    IntrusivePtr<publish::CacheDrivenTask> publish_task;
-
-    if (last_filter_idx >= m_ptrStages->publishFilterIdx()) {
-        publish_task = m_ptrStages->publishFilter()
-                ->createCacheDrivenTask();
-    }
-    if (last_filter_idx >= m_ptrStages->outputFilterIdx()) {
-        output_task = m_ptrStages->outputFilter()
-                      ->createCacheDrivenTask(m_outFileNameGen, publish_task);
-    }
-    if (last_filter_idx >= m_ptrStages->pageLayoutFilterIdx()) {
-        page_layout_task = m_ptrStages->pageLayoutFilter()
-                           ->createCacheDrivenTask(output_task);
-    }
-    if (last_filter_idx >= m_ptrStages->selectContentFilterIdx()) {
-        select_content_task = m_ptrStages->selectContentFilter()
-                              ->createCacheDrivenTask(page_layout_task);
-    }
-    if (last_filter_idx >= m_ptrStages->deskewFilterIdx()) {
-        deskew_task = m_ptrStages->deskewFilter()
-                      ->createCacheDrivenTask(select_content_task);
-    }
-    if (last_filter_idx >= m_ptrStages->pageSplitFilterIdx()) {
-        page_split_task = m_ptrStages->pageSplitFilter()
-                          ->createCacheDrivenTask(deskew_task);
-    }
-    if (last_filter_idx >= m_ptrStages->fixOrientationFilterIdx()) {
-        fix_orientation_task = m_ptrStages->fixOrientationFilter()
-                               ->createCacheDrivenTask(page_split_task);
-    }
-
-    assert(fix_orientation_task);
-
-    return fix_orientation_task;
 }
 
 void
@@ -3244,8 +3299,10 @@ MainWindow::setupStatusBar()
 
     connect(this, &MainWindow::UpdateStatusBarPageSize, this, &MainWindow::displayStatusBarPageSize);
     connect(this, &MainWindow::UpdateStatusBarMousePos, this, &MainWindow::displayStatusBarMousePos);
+    connect(this, &MainWindow::UpdateStatusBarFileSize, this, &MainWindow::displayStatusBarFileSize);
 
     statusLabelPhysSize->installEventFilter(this);
+    statusLabelFileSize->installEventFilter(this);
 }
 
 void
@@ -3313,6 +3370,19 @@ MainWindow::displayStatusBarMousePos()
     qreal y = pos.y();
     applyUnitsSettingToCoordinates(x, y);
     statusLabelMousePos->setText(tr("%1, %2").arg(x, 0, 'f', 1).arg(y, 0, 'f', 1));
+}
+
+void
+MainWindow::displayStatusBarFileSize()
+{
+    int sz = StatusBarProvider::getFileSize();
+
+    if (isBatchProcessingInProgress() || !isProjectLoaded() || sz == 0) {
+        statusLabelFileSize->clear();
+        return;
+    }
+
+    statusLabelFileSize->setText(StatusBarProvider::getStatusLabelFileSizeText());
 }
 
 const QList<QKeySequence> getPageActionShortcuts(const HotKeysId& id, int idx = 0)
@@ -3538,5 +3608,67 @@ void MainWindow::on_actionSelectPages_triggered()
 //                }
 //            }
         updateMainArea();
+    }
+}
+
+void
+MainWindow::setPublishProgressPanelVisible(bool visible)
+{
+    if (visible) {
+        if (m_ptrPublishProgressWidget) { //should be nullptr, but just in case
+            m_ptrPublishProgressWidget->reset();
+        } else {
+            m_ptrPublishProgressWidget.reset(new publish::EncodingProgressWidget(this));
+        }
+        if (m_pImageFrameLayout->indexOf(m_ptrPublishProgressWidget.get()) == -1) {
+            m_pImageFrameLayout->addWidget(m_ptrPublishProgressWidget.get());
+            connect(m_ptrStages->publishFilter().get(), &publish::Filter::displayProgressInfo,
+                    m_ptrPublishProgressWidget.get(), &publish::EncodingProgressWidget::displayInfo);
+        }
+    } else {
+        if (m_ptrPublishProgressWidget) {
+            if (m_pImageFrameLayout->indexOf(m_ptrPublishProgressWidget.get()) != -1) {
+                m_pImageFrameLayout->removeWidget(m_ptrPublishProgressWidget.get());
+            }
+            m_ptrPublishProgressWidget.reset(nullptr);
+        }
+    }
+}
+
+void MainWindow::on_actionManageSharedDictionaries_triggered()
+{
+    m_ptrStages->publishFilter()->displayDbjzManagerDlg();
+}
+
+void MainWindow::on_actionManageContents_triggered()
+{
+    m_ptrStages->publishFilter()->displayContentsManagerDlg();
+}
+
+void MainWindow::on_actionSetBundledFilename_triggered()
+{
+    IntrusivePtr<publish::Filter> filter = m_ptrStages->publishFilter();
+    QString current_fname = filter->bundledFilename();
+    if (current_fname.isEmpty()) {
+        current_fname = filter->djVuFilenameSuggestion();
+    }
+
+    const QString new_fname = QFileDialog::getSaveFileName(this, tr("Set bundled document filename"),
+                                                           current_fname,
+                                                           tr("DjVu document (*.djvu *.djv)") );
+
+    if (new_fname != current_fname) {
+        filter->setBundledFilename(new_fname);
+        if (filter->checkReadyToBundle()) {
+            filter->makeBundledDjVu();
+            QMessageBox::information(this, tr("Bundled document saved"),
+                                     tr("Bundled document is saved to:\n%1\n"
+                                        "This file will be automatically updated if pages will be changed in the project.").arg(new_fname));
+        } else {
+            QMessageBox::information(this, tr("Bundled document filename set"),
+                                     tr("Bundled document filename is set to:\n%1\n"
+                                        "But its not created as some pages are not processed yet.\n"
+                                        "This file will be automatically created when all pages are processed and updated in case of any changes afterwards.").arg(new_fname));
+        }
     }
 }

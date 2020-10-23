@@ -46,6 +46,9 @@ class ThumbnailSequence : public QObject
     Q_OBJECT
     DECLARE_NON_COPYABLE(ThumbnailSequence)
 public:
+
+    class CompositeItem;
+
     enum SelectionAction { KEEP_SELECTION, RESET_SELECTION };
 
     enum SelectionFlags {
@@ -149,7 +152,7 @@ public:
      */
     bool setSelection(PageId const& page_id, const SelectionAction action = ThumbnailSequence::RESET_SELECTION);
 
-    void setSelection(QSet<PageId> const& page_ids, ThumbnailSequence::SelectionAction const action);
+    void setSelection(QSet<PageId> const& page_ids, ThumbnailSequence::SelectionAction const action = ThumbnailSequence::RESET_SELECTION);
 
     bool setSelectionWithShift(PageId const& page_id);
 
@@ -230,6 +233,16 @@ public:
     void setMaxLogicalThumbSize(QSizeF const& max_size);
 
     QSizeF maxLogicalThumbSize() const;
+
+    bool findPageByGraphicsItem(QGraphicsItem* item, PageId& page);
+
+    /**
+     * Set thumbnail dragging on/off (off by default)
+     */
+    void setDraggingEnabled(bool enable);
+
+    void setIsDjbzView(bool enable);
+
 public slots:
     void on_pagesMaybeTargeted(const std::vector<PageId> pages);
 
@@ -250,13 +263,14 @@ signals:
      * below the last page.
      */
     void pastLastPageContextMenuRequested(QPoint const& screen_pos);
+
 private:
     class Item;
     class Impl;
     class GraphicsScene;
     class PlaceholderThumb;
     class LabelGroup;
-    class CompositeItem;
+
 
     void emitNewSelectionLeader(
         PageInfo const& page_info, CompositeItem const* composite,

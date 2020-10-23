@@ -53,14 +53,17 @@ public:
      *        to the image representing the hover state of the button.
      * \param pressed_state_file The path to a file or a Qt resource
      *        to the image representing the pressed state of the button.
+     * \param disabled_state_file The path to a file or a Qt resource
+     *        to the image representing the disabled state of the button.
      * \param parent An optional parent widget.
      *
-     * Note that the sizes of all 3 images should be the same.
+     * Note that the sizes of all 4 images should be the same.
      */
     SkinnedButton(
         QString const& normal_state_file,
         QString const& hover_state_file,
         QString const& pressed_state_file,
+        QString const& disabled_state_file = "",
         QWidget* parent = 0);
 
     /**
@@ -82,6 +85,16 @@ public:
      *        state image.
      */
     void setPressedImage(QString const& file);
+
+    /**
+     * \brief Set the disabled state image.
+     *
+     * \param file The path to a file or a Qt resource to the
+     *        image representing the disabled state of the button.
+     *        This image should have the same size as the normal
+     *        state image.
+     */
+    void setDisabledImage(QString const& file);
 
     /**
      * \brief Set the mask of the widget based on the alpha channel
@@ -109,6 +122,7 @@ private:
     QString m_normalStateFile;
     QString m_hoverStateFile;
     QString m_pressedStateFile;
+    QString m_disabledStateFile;
 };
 
 #endif

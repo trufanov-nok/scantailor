@@ -22,6 +22,7 @@
 #include "imageproc/BinaryThreshold.h"
 #include "imageproc/GrayImage.h"
 #include "ImageTransformation.h"
+#include "ExportSuggestions.h"
 #include <QImage>
 
 class FilterData
@@ -30,7 +31,7 @@ class FilterData
 public:
     FilterData(QImage const& image);
 
-    FilterData(FilterData const& other, ImageTransformation const& xform);
+    FilterData(FilterData const& other, ImageTransformation const& xform, const ExportSuggestions* exportSuggestions = nullptr);
 
     imageproc::BinaryThreshold bwThreshold() const
     {
@@ -51,11 +52,18 @@ public:
     {
         return m_grayImage;
     }
+
+    const ExportSuggestions* exportSuggestions() const
+    {
+        return m_exportSuggestions;
+    }
+
 private:
     QImage m_origImage;
     imageproc::GrayImage m_grayImage;
     ImageTransformation m_xform;
     imageproc::BinaryThreshold m_bwThreshold;
+    const ExportSuggestions* m_exportSuggestions;
 };
 
 #endif

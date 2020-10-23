@@ -40,6 +40,7 @@
 #include <memory>
 #include <assert.h>
 #include <settings/globalstaticsettings.h>
+#include <QDesktopServices>
 
 class StageListView::Model : public QAbstractTableModel
 {
@@ -122,6 +123,7 @@ StageListView::StageListView(QWidget* parent)
         ":/icons/play-small.png",
         ":/icons/play-small-hovered.png",
         ":/icons/play-small-pressed.png",
+        "",
         viewport()
     );
     m_pLaunchBtn->setStatusTip(tr("Launch batch processing"));
@@ -138,6 +140,19 @@ StageListView::StageListView(QWidget* parent)
     );
 
     connect(SettingsChangesSignaller::self(), &SettingsChangesSignaller::StyleChanged, this, &StageListView::readjustSizeConstraints);
+
+    m_pOpenDjVuBtn = new SkinnedButton(
+        ":/icons/djvulibre-mime-prebuilt-hi24-djvu.png",
+        ":/icons/djvulibre-mime-prebuilt-hi24-djvu-hovered.png",
+        ":/icons/djvulibre-mime-prebuilt-hi24-djvu-pressed.png",
+        ":/icons/djvulibre-mime-prebuilt-hi24-djvu-disabled.png",
+        viewport()
+    );
+    setBundledDjVuDoc(m_bundledDjVuDoc);
+    m_pOpenDjVuBtn->hide();
+
+    connect((SkinnedButton*)m_pOpenDjVuBtn, &SkinnedButton::clicked, this,
+            [=](){ QDesktopServices::openUrl(QUrl("file://"+m_bundledDjVuDoc)); });
 }
 
 StageListView::~StageListView()
@@ -154,6 +169,7 @@ StageListView::setStages(IntrusivePtr<StageSequence> const& stages)
 
     m_pModel = new Model(this, stages);
     setModel(m_pModel);
+    m_publishStageIdx = stages->publishFilterIdx();
 
     QHeaderView* h_header = horizontalHeader();
     QHeaderView* v_header = verticalHeader();
@@ -200,9 +216,9 @@ StageListView::setBatchProcessingPossible(bool const possible)
     m_batchProcessingPossible = possible;
 
     if (possible) {
-        placeLaunchButton(selectedRow());
+        placeStageListButton(m_pLaunchBtn, selectedRow(), selectedRow() != m_publishStageIdx? 1 : 2);
     } else {
-        removeLaunchButton(selectedRow());
+        removeStageListButtons(selectedRow());
     }
 }
 
@@ -215,7 +231,7 @@ StageListView::setBatchProcessingInProgress(bool const in_progress)
     m_batchProcessingInProgress = in_progress;
 
     if (in_progress) {
-        removeLaunchButton(selectedRow());
+        removeStageListButtons(selectedRow());
         updateRowSpans(); // Join columns.
 
         // Some styles (Oxygen) visually separate items in a selected row.
@@ -228,7 +244,10 @@ StageListView::setBatchProcessingInProgress(bool const in_progress)
         m_timerId = startTimer(180);
     } else {
         updateRowSpans(); // Separate columns.
-        placeLaunchButton(selectedRow());
+        if (selectedRow() == m_publishStageIdx) {
+            placeStageListButton(m_pOpenDjVuBtn, selectedRow(), 1);
+        }
+        placeStageListButton(m_pLaunchBtn, selectedRow(), selectedRow() != m_publishStageIdx? 1 : 2);
 
         m_pFirstColDelegate->removeChanges(QStyle::State_Selected | QStyle::State_MouseOver);
         m_pSecondColDelegate->removeChanges(QStyle::State_Selected | QStyle::State_MouseOver);
@@ -281,12 +300,19 @@ StageListView::selectionChanged(
     QTableView::selectionChanged(selected, deselected);
 
     if (!deselected.isEmpty()) {
-        removeLaunchButton(deselected.front().topLeft().row());
+        removeStageListButtons(deselected.front().topLeft().row());
     }
 
+
     if (!selected.isEmpty()) {
-        placeLaunchButton(selected.front().topLeft().row());
-        GlobalStaticSettings::stageChanged(selected.front().topLeft().row());
+        int const row = selected.front().topLeft().row();
+        if (row == m_publishStageIdx) {
+            placeStageListButton(m_pOpenDjVuBtn, row);
+            placeStageListButton(m_pLaunchBtn, row, 2);
+        } else {
+            placeStageListButton(m_pLaunchBtn, row);
+        }
+        GlobalStaticSettings::stageChanged(row);
     }
 }
 
@@ -301,17 +327,24 @@ StageListView::ensureSelectedRowVisible()
 }
 
 void
-StageListView::removeLaunchButton(int const row)
+StageListView::removeStageListButton(QWidget* btn, int const row)
 {
     if (row == -1) {
         return;
     }
 
-    m_pLaunchBtn->hide();
+    btn->hide();
+}
+
+inline QRect adjust_button_geometry(QRect button_geometry, int steps_from_left) {
+    // Place it to the right (assuming height is less than width).
+    button_geometry.setLeft(button_geometry.right() + 1 - button_geometry.height() * steps_from_left - steps_from_left);
+    button_geometry.setRight(button_geometry.left() + button_geometry.height());
+    return button_geometry;
 }
 
 void
-StageListView::placeLaunchButton(int row)
+StageListView::placeStageListButton(QWidget* btn, int row, int steps_from_left)
 {
     if (row == -1) {
         return;
@@ -319,13 +352,29 @@ StageListView::placeLaunchButton(int row)
 
     QModelIndex const idx(m_pModel->index(row, 0));
     QRect button_geometry(visualRect(idx));
-
-    // Place it to the right (assuming height is less than width).
-    button_geometry.setLeft(button_geometry.right() + 1 - button_geometry.height());
-
-    m_pLaunchBtn->setGeometry(button_geometry);
-    m_pLaunchBtn->show();
+    btn->setGeometry(adjust_button_geometry(button_geometry, steps_from_left));
+    btn->show();
 }
+
+void
+StageListView::removeLaunchBatchButton(int row)
+{
+    removeStageListButton(m_pLaunchBtn, row);
+}
+
+void
+StageListView::removeComposeDjVuButton(int row)
+{
+    removeStageListButton(m_pOpenDjVuBtn, row);
+}
+
+void
+StageListView::removeStageListButtons(int row)
+{
+    removeLaunchBatchButton(row);
+    removeComposeDjVuButton(row);
+}
+
 
 void
 StageListView::createBatchAnimationSequence(int const square_side)
@@ -446,8 +495,11 @@ StageListView::LeftColDelegate::paint(
     if (index.row() == m_pView->selectedRow() && m_pView->m_pLaunchBtn->isVisible()) {
         QRect button_geometry(option.rect);
         // Place it to the right (assuming height is less than width).
-        button_geometry.setLeft(button_geometry.right() + 1 - button_geometry.height());
-        m_pView->m_pLaunchBtn->setGeometry(button_geometry);
+        int steps = 1;
+        if (m_pView->m_pOpenDjVuBtn->isVisible()) {
+            m_pView->m_pOpenDjVuBtn->setGeometry(adjust_button_geometry(button_geometry, steps++));
+        }
+        m_pView->m_pLaunchBtn->setGeometry(adjust_button_geometry(button_geometry, steps));
     }
 }
 
@@ -474,4 +526,28 @@ StageListView::RightColDelegate::paint(
             painter->drawPixmap(r, pixmap);
         }
     }
+}
+
+void
+StageListView::enableBundledDjVuButton(bool enabled)
+{
+    m_pOpenDjVuBtn->setEnabled(enabled && !m_bundledDjVuDoc.isEmpty());
+}
+
+void
+StageListView::setBundledDjVuDoc(const QString& filename)
+{
+    m_bundledDjVuDoc = filename;
+    updateComposeDjVuButtonStatusTip();
+    m_pOpenDjVuBtn->setEnabled(!m_bundledDjVuDoc.isEmpty());
+}
+
+void
+StageListView::updateComposeDjVuButtonStatusTip()
+{
+    QString status_tip = tr("Open composed DjVu document");
+    if (!m_bundledDjVuDoc.isEmpty()) {
+        status_tip += ": (" + m_bundledDjVuDoc +")";
+    }
+    m_pOpenDjVuBtn->setStatusTip(status_tip);
 }

@@ -264,18 +264,20 @@ public:
   bool    getTextForPointer(QString results[]);
   QImage  getImageForRect(const QRect &rect);
   QRect   getSegmentForRect(const QRect &rect, int pageNo);
+  QImage  renderImageForRect(int pageno, const QRect& rect) const;
 
   bool pageSizeKnown(int pageno) const;
   void clearHighlights(int pageno);
   void addHighlight(int pageno, int x, int y, int w, int h, 
                     QColor color, bool rc=false);
-  
+  void setAlternativeImage(const QString& fname);
 protected:
   virtual bool event(QEvent *event);
   virtual bool viewportEvent (QEvent *event);
   virtual void scrollContentsBy(int dx, int dy);
   virtual void resizeEvent(QResizeEvent *event);
   virtual void keyPressEvent(QKeyEvent *event);
+  virtual void keyReleaseEvent(QKeyEvent *event);
   virtual void modifierEvent(Qt::KeyboardModifiers, Qt::MouseButtons, QPoint);
   virtual void mousePressEvent(QMouseEvent *event);
   virtual void mouseDoubleClickEvent(QMouseEvent *event);

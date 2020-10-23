@@ -66,6 +66,12 @@ public:
     {
         return m_pages.cend();
     }
+
+    void clear()
+    {
+        m_pages.clear();
+    }
+
 private:
     std::vector<PageInfo> m_pages;
 };

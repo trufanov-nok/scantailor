@@ -19,10 +19,6 @@
 
 #include "EditableEllipse.h"
 #include "SerializableEllipse.h"
-#include "XmlMarshaller.h"
-#include "XmlUnmarshaller.h"
-#include <QDomNode>
-#include <QDomElement>
 #include <QString>
 #include <assert.h>
 #include <cmath>

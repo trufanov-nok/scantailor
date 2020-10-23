@@ -104,6 +104,27 @@ public:
     static bool m_inversePageOrder;
 
     static bool m_DontUseNativeDialog;
+
+    static QString m_djvu_bin_minidjvu;
+    static QString m_djvu_bin_c44;
+    static QString m_djvu_bin_djvuextract;
+    static QString m_djvu_bin_djvumake;
+    static QString m_djvu_bin_djvused;
+    static QString m_djvu_bin_tesseract;
+    static QString m_djvu_bin_djvm;
+    static QString m_djvu_pages_subfolder;
+    static QString m_djvu_layers_subfolder;
+    static int m_djvu_pages_per_djbz;
+    static bool m_djvu_djbz_erosion;
+    static bool m_djvu_djbz_use_prototypes;
+    static bool m_djvu_djbz_use_averaging;
+    static int m_djvu_djbz_aggression;
+    static int m_djvu_djbz_classifier;
+    static QString m_djvu_djbz_extension;
+
+    static uint m_default_bsf;
+    static FREE_IMAGE_FILTER m_default_scale_filter;
+
 };
 
 #endif // GLOBALSTATICSETTINGS_H

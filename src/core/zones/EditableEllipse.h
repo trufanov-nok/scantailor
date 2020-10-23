@@ -25,14 +25,11 @@
 #include "SerializableEllipse.h"
 #include <QPointF>
 #include <QVector>
-#include <QDomElement>
 #include <QTransform>
 #include <cmath>
 #ifndef Q_MOC_RUN
 #include <boost/function.hpp>
 #endif
-
-class SerializableEllipse;
 
 class EditableEllipse : public RefCountable
 {

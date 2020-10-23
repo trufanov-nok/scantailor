@@ -477,7 +477,7 @@ OptionsWidget::updateDpiDisplay()
         dpiValue->setText(Utils::richTextForLink(dpi_label));
     }
 
-    StatusBarProvider::setSettingsDPi(m_outputDpi);
+    StatusBarProvider::setSettingsDpi(m_outputDpi);
 }
 
 void

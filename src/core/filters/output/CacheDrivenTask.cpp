@@ -81,6 +81,11 @@ CacheDrivenTask::process(
 
         do { // Just to be able to break from it.
 
+            if (!m_ptrSettings->exportSuggestions().contains(page_info.id())) {
+                need_reprocess = true;
+                break;
+            }
+
             std::unique_ptr<OutputParams> stored_output_params(
                 m_ptrSettings->getOutputParams(page_info.id())
             );
@@ -135,18 +140,26 @@ CacheDrivenTask::process(
                 break;
             }
 
+            if (!m_ptrSettings->exportSuggestions().contains(page_info.id()) ||
+                    !m_ptrSettings->exportSuggestions()[page_info.id()].isValid) {
+                need_reprocess = true;
+                break;
+            }
+
             if (!stored_output_params->outputFileParams().matches(OutputFileParams(out_file_info))) {
                 need_reprocess = true;
                 break;
             }
         } while (false);
 
-        if (m_ptrNextTask) {
-            m_ptrNextTask->process(page_info, collector);
-            return;
-        }
 
         if (need_reprocess) {
+
+            if (m_ptrNextTask) {
+                m_ptrNextTask->process(page_info, collector, new_xform);
+                return;
+            }
+
             thumb_col->processThumbnail(
                 std::unique_ptr<QGraphicsItem>(
                     new IncompleteThumbnail(
@@ -161,6 +174,11 @@ CacheDrivenTask::process(
                 new_xform.resultingRect(), params.outputDpi()
             );
 
+            if (m_ptrNextTask) {
+                m_ptrNextTask->process(page_info, collector, out_xform);
+                return;
+            }
+
             thumb_col->processThumbnail(
                 std::unique_ptr<QGraphicsItem>(
                     new Thumbnail(
@@ -173,7 +191,7 @@ CacheDrivenTask::process(
         }
     } else {
         if (m_ptrNextTask) {
-            m_ptrNextTask->process(page_info, collector);
+            m_ptrNextTask->process(page_info, collector, ImageTransformation( QRectF(), Dpi()));
             return;
         }
     }

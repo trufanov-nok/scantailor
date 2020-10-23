@@ -51,3 +51,27 @@ bool operator<(ImageId const& lhs, ImageId const& rhs)
     }
     return lhs.page() < rhs.page();
 }
+
+QByteArray ImageId::toByteArray() const
+{
+    QByteArray res;
+    const QByteArray str = m_filePath.toUtf8();
+    const int strlen = str.size();
+    res.resize(sizeof(m_page) + sizeof(int));
+    memcpy(res.data(), &m_page, sizeof(m_page));
+    memcpy(res.data() + sizeof(m_page), &strlen, sizeof(int));
+    res.append(str);
+    return res;
+}
+
+int ImageId::fromByteArray(const QByteArray& data, ImageId &imageId)
+{
+    assert(data.size() >= (int)(sizeof(m_page) + sizeof(int)));
+    int page, strlen;
+    memcpy(&page,   data.data(), sizeof(m_page));
+    memcpy(&strlen, data.data() + sizeof(m_page), sizeof(int));
+    const QByteArray str(data.data() + sizeof(m_page) + sizeof(int), strlen);
+    int bytes_read = sizeof(m_page) + sizeof(int) + strlen;
+    imageId = ImageId(QString::fromUtf8(str), page);
+    return bytes_read;
+}

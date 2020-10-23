@@ -36,6 +36,12 @@ public:
 signals:
     void settingsChanged();
 private slots:
+    void on_edMinidjvu_textChanged(const QString &arg1);
+
+private slots:
+    void on_btnMinidjvuChoose_clicked();
+
+private slots:
     void on_dialogButtonClicked(QAbstractButton* btn);
     void commitChanges();
     void filterChanged(const QString&);

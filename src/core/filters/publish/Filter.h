@@ -26,9 +26,16 @@
 #include "FilterResult.h"
 #include "SafeDeletingQObjectPtr.h"
 #include "ProjectPages.h"
+#include "CompositeCacheDrivenTask.h"
 #include <QCoreApplication>
 #include <QImage>
+#include <QSet>
+#include <memory> // std::unique_ptr
 
+#include "djview4/qdjvu.h"
+#include "djview4/qdjvuwidget.h"
+
+class StageSequence;
 class PageId;
 class PageSelectionAccessor;
 class ThumbnailPixmapCache;
@@ -42,59 +49,132 @@ class OptionsWidget;
 class Task;
 class CacheDrivenTask;
 class Settings;
+class DjbzDispatcher;
 
 /**
  * \note All methods of this class except the destructor
  *       must be called from the GUI thread only.
  */
-class Filter : public AbstractFilter
+class Filter : public QObject, public AbstractFilter
 {
+    Q_OBJECT
     DECLARE_NON_COPYABLE(Filter)
-    Q_DECLARE_TR_FUNCTIONS(publishing::Filter)
+//    Q_DECLARE_TR_FUNCTIONS(publishing::Filter)
 public:
-    Filter(IntrusivePtr<ProjectPages> const& pages, PageSelectionAccessor const& page_selection_accessor);
+    Filter(StageSequence* stages,
+           IntrusivePtr<ProjectPages> const& pages, PageSelectionAccessor const& page_selection_accessor);
 
-    virtual ~Filter();
+    virtual ~Filter() override;
 
-    virtual QString getName() const;
+    virtual QString getName() const override;
 
-    virtual PageView getView() const;
+    virtual PageView getView() const override;
 
-    virtual void performRelinking(AbstractRelinker const& relinker);
+    virtual int selectedPageOrder() const override;
 
-    virtual void preUpdateUI(FilterUiInterface* ui, PageId const&);
+    virtual void selectPageOrder(int option) override;
+
+    virtual std::vector<PageOrderOption> pageOrderOptions() const override;
+
+    virtual void performRelinking(AbstractRelinker const& relinker) override;
+
+    virtual void preUpdateUI(FilterUiInterface* ui, PageId const&) override;
 
     virtual QDomElement saveSettings(
-        ProjectWriter const& writer, QDomDocument& doc) const;
+        ProjectWriter const& writer, QDomDocument& doc) const override;
 
     virtual void loadSettings(
-        ProjectReader const& reader, QDomElement const& filters_el);
+        ProjectReader const& reader, QDomElement const& filters_el) override;
 
-    virtual void invalidateSetting(PageId const& page);
+    virtual void invalidateSetting(PageId const& page_id) override;
 
     IntrusivePtr<Task> createTask(
         PageId const& page_id,
+        IntrusivePtr<ThumbnailPixmapCache> const& thumbnail_cache,
+        OutputFileNameGenerator const& out_file_name_gen,
         bool batch_processing);
 
-    IntrusivePtr<CacheDrivenTask> createCacheDrivenTask();
+    IntrusivePtr<CacheDrivenTask> createCacheDrivenTask(OutputFileNameGenerator const& out_file_name_gen);
 
-    OptionsWidget* optionsWidget()
+    OptionsWidget* optionsWidget() const
     {
         return m_ptrOptionsWidget.get();
     }
 
-    Settings* getSettings()
+    StageSequence* stages() const
+    {
+        return m_ptrStages;
+    }
+
+    Settings* settings() const
     {
         return m_ptrSettings.get();
     }
-private:
-    void writeImageSettings(
-        QDomDocument& doc, QDomElement& filter_el,
-        ImageId const& image_id, int numeric_id) const;
 
+    ThumbnailPixmapCache* thumbnailPixmapCache() const
+    {
+        return m_ThumbnailPixmapCache;
+    }
+
+    IntrusivePtr<CompositeCacheDrivenTask> createCompositeCacheDrivenTask();
+
+    const ProjectPages* pages() const {
+        return m_ptrPages.get();
+    };
+
+    QWidget* imageViewer() const { return m_ptrImageViewer.get(); }
+    QDjVuWidget* djVuWidget() const { return m_ptrDjVuWidget.get(); }
+
+    void suppressDjVuDisplay(const PageId &page_id, bool val);
+
+    void setOutputFileNameGenerator(OutputFileNameGenerator* outputFileNameGenerator, ThumbnailPixmapCache* cache) {
+        m_outputFileNameGenerator = outputFileNameGenerator;
+        m_ThumbnailPixmapCache = cache;
+    }
+
+    void ensureAllPagesHaveDjbz();
+    void ensureAllPagesHaveDjbz(DjbzDispatcher& dispatcher);
+    void reassignAllPagesExceptLocked(DjbzDispatcher& dispatcher);
+
+    void displayDbjzManagerDlg();
+    void displayContentsManagerDlg();
+
+    void setDjVuFilenameSuggestion(const QString& fname) { m_bundledDjVuSuggestion = fname; }
+    const QString& djVuFilenameSuggestion() const { return m_bundledDjVuSuggestion; }
+    void setBundledFilename(const QString& fname);
+    const QString& bundledFilename() const;
+    bool checkReadyToBundle() const;
+
+    QVector<PageInfo> filterBatchPages(const QVector<PageInfo>& pages) const;
+public Q_SLOTS:
+    void updateDjVuDocument(const PageId &page_id);
+    void makeBundledDjVu();
+Q_SIGNALS:
+    void setProgressPanelVisible(bool visible);
+    void displayProgressInfo(float progress, int process, int state);
+    void tabChanged(int idx);
+    void enableBundledDjVuButton(bool enabled);
+    void setBundledDjVuDoc(const QString& filename);
+
+private:
+    void setupImageViewer();
+    void writePageSettings(QDomDocument& doc, QDomElement& filter_el,
+        const PageId &page_id, int numeric_id) const;
+
+    StageSequence* m_ptrStages;
+    OutputFileNameGenerator* m_outputFileNameGenerator;
+    ThumbnailPixmapCache* m_ThumbnailPixmapCache;
     IntrusivePtr<ProjectPages> m_ptrPages;
     IntrusivePtr<Settings> m_ptrSettings;
-    SafeDeletingQObjectPtr<OptionsWidget> m_ptrOptionsWidget;
+    std::unique_ptr<QWidget> m_ptrImageViewer;
+    std::unique_ptr<OptionsWidget> m_ptrOptionsWidget;
+    QDjVuContext m_DjVuContext;
+    std::unique_ptr<QDjVuWidget> m_ptrDjVuWidget;
+
+    std::vector<PageOrderOption> m_pageOrderOptions;
+    int m_selectedPageOrder;
+    bool m_suppressDjVuDisplay;
+    QString m_bundledDjVuSuggestion;
 };
 
 } // publish

@@ -36,6 +36,8 @@ class PageSelectionAccessor;
 class ThumbnailPixmapCache;
 class OutputFileNameGenerator;
 class QString;
+class ExportSuggestion;
+class ExportSuggestions;
 
 namespace publish
 {
@@ -100,11 +102,17 @@ public:
     {
         return m_ptrSettings.get();
     }
+
+    const ExportSuggestions* exportSuggestions() const;
+
     QStringList getZonesInfo(const PageId& id) const;
 
     virtual std::vector<PageOrderOption> pageOrderOptions() const;
     virtual int selectedPageOrder() const;
     virtual void selectPageOrder(int option);
+
+    bool checkReadyToPublish(OutputFileNameGenerator const& filename_gen,
+                             ProjectPages const& pages, PageId const* ignore) const;
 private:
     void writePageSettings(
         QDomDocument& doc, QDomElement& filter_el,

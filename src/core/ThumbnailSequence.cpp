@@ -67,6 +67,8 @@
 #include <QCursor>
 #include <Qt>
 #include <QDebug>
+#include <QDrag>
+#include <QMimeData>
 #include <algorithm>
 #include <stddef.h>
 #include <assert.h>
@@ -216,6 +218,24 @@ public:
     }
 
     void setPagesMaybeTargeted(const std::vector<PageId> pages);
+
+    bool findPageByGraphicsItem(QGraphicsItem* item, PageId& page);
+
+    void setDraggingEnabled(bool enable)
+    {
+        m_draggingEnabled = enable;
+    }
+
+    bool isDraggingEnabled() const
+    {
+        return m_draggingEnabled;
+    }
+
+    void setIsDjbzView(bool enable)
+    {
+        m_isDjbzView = enable;
+    }
+
 private:
     class ItemsByIdTag;
     class ItemsInOrderTag;
@@ -315,6 +335,9 @@ private:
             return m_ptrOrderProvider.get();
         }
     }
+
+    bool m_draggingEnabled;
+    bool m_isDjbzView;
 };
 
 class ThumbnailSequence::PlaceholderThumb : public QGraphicsItem
@@ -393,9 +416,13 @@ public:
     }
 
 protected:
-    virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent* event);
+    virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent* event) override;
 
-    virtual void mousePressEvent(QGraphicsSceneMouseEvent* event);
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+
+    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
 private:
     // We no longer use QGraphicsView's selection mechanism, so we
     // shadow isSelected() and setSelected() with unimplemented private
@@ -586,6 +613,24 @@ ThumbnailSequence::emitNewSelectionLeader(
     emit newSelectionLeader(page_info, thumb_rect, flags);
 }
 
+bool
+ThumbnailSequence::findPageByGraphicsItem(QGraphicsItem* item, PageId& page)
+{
+    return m_ptrImpl->findPageByGraphicsItem(item, page);
+}
+
+void
+ThumbnailSequence::setDraggingEnabled(bool enable)
+{
+    m_ptrImpl->setDraggingEnabled(enable);
+}
+
+void
+ThumbnailSequence::setIsDjbzView(bool enable)
+{
+    m_ptrImpl->setIsDjbzView(enable);
+}
+
 /*======================== ThumbnailSequence::Impl ==========================*/
 
 ThumbnailSequence::Impl::Impl(
@@ -596,7 +641,9 @@ ThumbnailSequence::Impl::Impl(
         m_itemsById(m_items.get<ItemsByIdTag>()),
         m_itemsInOrder(m_items.get<ItemsInOrderTag>()),
         m_selectedThenUnselected(m_items.get<SelectedThenUnselectedTag>()),
-        m_pSelectionLeader(0)
+        m_pSelectionLeader(0),
+        m_draggingEnabled(false),
+        m_isDjbzView(false)
 {
 	m_graphicsScene.setContextMenuEventCallback(
 		[this](QGraphicsSceneContextMenuEvent* evt) {
@@ -1878,13 +1925,20 @@ ThumbnailSequence::Impl::getLabelGroup(PageInfo const& page_info)
 
     QGraphicsSimpleTextItem* normal_text_item(new QGraphicsSimpleTextItem);
     normal_text_item->setText(text);
-
     QGraphicsSimpleTextItem* bold_text_item(new QGraphicsSimpleTextItem);
     bold_text_item->setText(text);
-    QFont bold_font(bold_text_item->font());
-//  bold_font.setWeight(QFont::Bold);
-    bold_text_item->setFont(bold_font);
     bold_text_item->setBrush(QApplication::palette().highlightedText());
+
+    if (m_isDjbzView) {
+        QFont font(normal_text_item->font());
+        if (font.pointSizeF() != -1) {
+            font.setPointSizeF(font.pointSizeF()*0.5);
+        } else if (font.pixelSize() != -1) {
+            font.setPixelSize(font.pixelSize()*0.5);
+        }
+        normal_text_item->setFont(font);
+        bold_text_item->setFont(font);
+    }
 
     QRectF normal_text_box(normal_text_item->boundingRect());
     QRectF bold_text_box(bold_text_item->boundingRect());
@@ -1905,7 +1959,10 @@ ThumbnailSequence::Impl::getLabelGroup(PageInfo const& page_info)
         return std::unique_ptr<LabelGroup>(new LabelGroup(normal_text_item, bold_text_item));
     }
 
-    QPixmap const pixmap(pixmap_resource);
+    QPixmap pixmap(pixmap_resource);
+    if (m_isDjbzView) {
+        pixmap = pixmap.scaled(pixmap.size()/1.5, Qt::KeepAspectRatio);
+    }
     QGraphicsPixmapItem* pixmap_item(new QGraphicsPixmapItem);
     pixmap_item->setPixmap(pixmap);
 
@@ -2199,10 +2256,51 @@ ThumbnailSequence::CompositeItem::mousePressEvent(
     QGraphicsItemGroup::mousePressEvent(event);
 
     event->accept();
+}
+
+void
+ThumbnailSequence::CompositeItem::mouseReleaseEvent(
+    QGraphicsSceneMouseEvent* const event)
+{
+    QGraphicsItemGroup::mouseReleaseEvent(event);
+
+    event->accept();
 
     if (event->button() == Qt::LeftButton) {
         m_rOwner.itemSelectedByUser(this, event->modifiers());
     }
+}
+
+void
+ThumbnailSequence::CompositeItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+  QGraphicsItemGroup::mouseMoveEvent(event);
+
+  if (!m_rOwner.isDraggingEnabled() || QLineF(event->screenPos(), event->buttonDownScreenPos(Qt::LeftButton)).length() < QApplication::startDragDistance()) {
+      return;
+  }
+
+  const std::set<PageId> sel_pages = m_rOwner.selectedItems();
+  if (sel_pages.empty()) {
+      return;
+  }
+
+  int sel_len = sel_pages.size();
+  QByteArray drag_data;
+  drag_data.resize(sizeof(sel_len));
+  memcpy(drag_data.data(), &sel_len, sizeof(sel_len));
+  for (const PageId& p: sel_pages) {
+      drag_data.append(p.toByteArray());
+  }
+
+  QDrag *drag = new QDrag(event->widget());
+  QMimeData *mime = new QMimeData();
+  mime->setData(PageId::mimeType, drag_data);
+  drag->setMimeData(mime);
+  drag->setPixmap(QPixmap(":/icons/document-multiple.png"));
+  drag->setHotSpot(QPoint(15, 30));
+
+  drag->exec();
 }
 
 void
@@ -2213,4 +2311,20 @@ ThumbnailSequence::CompositeItem::contextMenuEvent(
     m_rOwner.contextMenuRequested(
         m_pItem->pageInfo, event->screenPos(), m_pItem->isSelected()
     );
+}
+
+bool
+ThumbnailSequence::Impl::findPageByGraphicsItem(QGraphicsItem* item, PageId& page)
+{
+    ThumbnailSequence::CompositeItem* ci =
+            dynamic_cast<ThumbnailSequence::CompositeItem*>(item);
+    if (ci) {
+        for (ThumbnailSequence::Item i: m_itemsInOrder) {
+            if(i.composite == ci) {
+                page = i.pageId();
+                return true;
+            }
+        }
+    }
+    return false;
 }

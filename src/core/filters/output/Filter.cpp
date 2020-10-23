@@ -41,6 +41,7 @@
 #include "OrderBySourceColor.h"
 #include "version.h"
 #include "FillColorProperty.h"
+#include "ExportSuggestions.h"
 
 namespace output
 {
@@ -129,6 +130,12 @@ Filter::writePageSettings(
         page_el.appendChild(output_params->toXml(doc, "output-params"));
     }
 
+    const ExportSuggestions& export_suggestion = m_ptrSettings->exportSuggestions();
+    if (export_suggestion.contains(page_id)) {
+        const ExportSuggestion& es = export_suggestion[page_id];
+        page_el.appendChild(es.toXml(doc, "exp_sugg"));
+    }
+
     filter_el.appendChild(page_el);
 }
 
@@ -184,6 +191,9 @@ Filter::loadSettings(ProjectReader const& reader, QDomElement const& filters_el)
             OutputParams const output_params(output_params_el);
             m_ptrSettings->setOutputParams(page_id, output_params);
         }
+
+        QDomElement exp = el.namedItem("exp_sugg").toElement();
+        m_ptrSettings->setExportSuggestion(page_id, ExportSuggestion(exp));
     }
 }
 
@@ -304,6 +314,22 @@ Filter::getZonesInfo(const PageId& id) const
     ZoneSet const new_picture_zones(m_ptrSettings->pictureZonesForPage(id));
     ZoneSet const new_fill_zones(m_ptrSettings->fillZonesForPage(id));
     return exportZonesInfo(new_picture_zones, new_fill_zones);
+}
+
+bool
+Filter::checkReadyToPublish(OutputFileNameGenerator const& filename_gen,
+                                ProjectPages const& pages, PageId const* ignore) const
+{
+    if (CommandLine::get().hasDisableCheckOutput())
+        return true;
+    PageSequence const snapshot(pages.toPageSequence(PAGE_VIEW));
+    return m_ptrSettings->checkOutputComplete(filename_gen, snapshot, ignore);
+}
+
+const ExportSuggestions*
+Filter::exportSuggestions() const
+{
+ return &m_ptrSettings->exportSuggestions();
 }
 
 } // namespace output

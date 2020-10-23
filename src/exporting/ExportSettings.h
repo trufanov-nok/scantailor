@@ -38,7 +38,8 @@ struct ExportSettings {
     bool default_out_dir;
     QString export_dir_path;
     bool export_to_multipage;
-    bool generate_blank_back_subscans;
+    bool save_blank_foreground;
+    bool save_blank_background;
     bool use_sep_suffix_for_pics;
     PageGenTweaks page_gen_tweaks;
     bool export_selected_pages_only;

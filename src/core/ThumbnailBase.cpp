@@ -153,7 +153,7 @@ ThumbnailBase::paint(QPainter* painter,
         int w = (int)display_rect.width();
         int h = (int)display_rect.height();
 
-        // Add some extra, to avoid rectreating the pixmap too often.
+        // Add some extra, to avoid recreating the pixmap too often.
         w += w / 10;
         h += h / 10;
 

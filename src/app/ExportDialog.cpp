@@ -259,9 +259,11 @@ ExportDialog::startExport(void)
     settings.default_out_dir = ui.DefaultOutputFolder->isChecked();
     settings.export_dir_path = ui.outExportDirLine->text();
     settings.export_to_multipage = ui.cbMultipageOutput->isChecked();
-    settings.generate_blank_back_subscans = ui.GenerateBlankBackSubscans->isChecked();
+    settings.save_blank_background = ui.GenerateBlankBackSubscans->isChecked();
     settings.use_sep_suffix_for_pics = ui.UseSepSuffixForPics->isChecked();
     settings.page_gen_tweaks = PageGenTweak::NoTweaks;
+    // forced as export is intended to be used with DjVu Imager. Still this option added for usage in Publish processing stage.
+    settings.save_blank_foreground = true;
 #ifdef TARGET_OS_MAC
     // for compatibility with Qt 5.5
     if (ui.KeepOriginalColorIllumForeSubscans->isChecked()) {

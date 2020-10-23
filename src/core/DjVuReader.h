@@ -15,26 +15,37 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifndef DJVUREADER_H_
+#define DJVUREADER_H_
 
-#ifndef PUBLISH_IMAGEVIEW_H_
-#define PUBLISH_IMAGEVIEW_H_
+#include <libdjvu/ddjvuapi.h>
+#include <libdjvu/miniexp.h>
 
-#include "ImageViewBase.h"
-#include "ImageTransformation.h"
+class QIODevice;
+class QImage;
+class QString;
+class ImageId;
 
-namespace publish
+class DjVuReader
 {
-
-class ImageView : public ImageViewBase
-{
-    Q_OBJECT
 public:
-    ImageView(QImage const& image, QImage const& downscaled_image,
-              ImageTransformation const& xform);
 
-    virtual ~ImageView();
+    static QImage load(QString const& file_path, int page_num = 0);
+
+    static QImage load(ImageId const& image_id);
+
+	static bool canRead(QIODevice& device);
+	
+	/**
+	 * \brief Reads the image from io device to QImage.
+	 *
+	 * \param device The device to read from.  This device must be
+	 *        opened for reading and must be seekable.
+	 * \param page_num A zero-based page number within a multi-page
+     *        DjVu file.
+	 * \return The resulting image, or a null image in case of failure.
+	 */
+    static QImage readImage(const QString &filename, int page_num = 0);
 };
-
-} // namespace publish
 
 #endif

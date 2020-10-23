@@ -98,9 +98,20 @@
     <addaction name="actionGoToPage"/>
     <addaction name="actionSelectPages"/>
    </widget>
+   <widget class="QMenu" name="menuPublish">
+    <property name="title">
+     <string>Publish</string>
+    </property>
+    <addaction name="actionManageContents"/>
+    <addaction name="actionSetMetadata"/>
+    <addaction name="actionManageSharedDictionaries"/>
+    <addaction name="separator"/>
+    <addaction name="actionSetBundledFilename"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuDebug"/>
+   <addaction name="menuPublish"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="appStatusBar"/>
@@ -439,6 +450,13 @@
               <widget class="Line" name="line_2">
                <property name="orientation">
                 <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="statusLabelFileSize">
+               <property name="text">
+                <string/>
                </property>
               </widget>
              </item>
@@ -925,6 +943,29 @@
   <action name="actionSelectPages">
    <property name="text">
     <string>Select pages...</string>
+   </property>
+  </action>
+  <action name="actionSetMetadata">
+   <property name="text">
+    <string>Manage metadata...</string>
+   </property>
+  </action>
+  <action name="actionManageSharedDictionaries">
+   <property name="text">
+    <string>Manage shared dictionaries...</string>
+   </property>
+  </action>
+  <action name="actionSetBundledFilename">
+   <property name="text">
+    <string>Set output document filename...</string>
+   </property>
+   <property name="toolTip">
+    <string>Choose where bundled document will be generated</string>
+   </property>
+  </action>
+  <action name="actionManageContents">
+   <property name="text">
+    <string>Manage contents...</string>
    </property>
   </action>
  </widget>

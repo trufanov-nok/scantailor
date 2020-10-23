@@ -24,6 +24,12 @@
 
 namespace exporting {
 
+enum SplitResult {
+    EmptyImage = 0,
+    HaveBackground = 1,
+    HaveForeground = 2
+};
+
 class ImageSplitOps
 {
 public:
@@ -31,12 +37,16 @@ public:
     static QImage GenerateBlankImage(QImage& out_img, QImage::Format format, uint pixel = 0xFFFFFFFF);
 
     template<typename MixedPixel>
-    static bool GenerateSubscans(QImage& source_img, QImage* foreground_img, QImage* background_img, QImage* mask_img, bool keep_orig_fore_subscan, QImage* p_orig_fore_subscan)
+    static int GenerateSubscans(QImage& source_img, QImage* foreground_img, QImage* background_img, QImage* mask_img, bool keep_orig_fore_subscan, QImage* p_orig_fore_subscan)
     {
 
         if (!foreground_img && !background_img && !mask_img) {
-            return false;
+            return SplitResult::EmptyImage;
         }
+
+        assert (source_img.format() == QImage::Format_Indexed8 ||
+                source_img.format() == QImage::Format_RGB32 ||
+                source_img.format() == QImage::Format_ARGB32); // not used for MONO
 
         if (foreground_img) {
             QImage::Format format = keep_orig_fore_subscan ? source_img.format() : QImage::Format_Mono;
@@ -88,16 +98,31 @@ public:
             source_orig_stride = p_orig_fore_subscan->bytesPerLine() / sizeof(MixedPixel);
         }
 
-        const MixedPixel white_pixel = static_cast<MixedPixel>((uint32_t) 0xffffffff);
+        const bool use_indexes = source_img.format() == QImage::Format_Indexed8;
+        const int white_idx = source_img.colorTable().indexOf(qRgb(0xFF, 0xFF, 0xFF));
+        const int black_idx = source_img.colorTable().indexOf(qRgb(0x00, 0x00, 0x00));
+        const MixedPixel white_pixel = use_indexes && white_idx != -1?
+                    static_cast<MixedPixel>((uchar) white_idx) :
+                    static_cast<MixedPixel>((uint32_t) 0xffffffff);
+        const MixedPixel black_pixel = use_indexes && black_idx != -1?
+                    static_cast<MixedPixel>((uchar) black_idx) :
+                    static_cast<MixedPixel>((uint32_t) 0x00000000);
         const MixedPixel mask_pixel = static_cast<MixedPixel>((uint32_t) 0x00ffffff);
 
-        bool only_bw = true;
+        bool has_bw = false;
+        bool has_color = false;
 
         for (int y = 0; y < source_img.height(); ++y) {
             for (int x = 0; x < source_img.width(); ++x) {
                 //this line of code was suggested by Tulon:
-                if ((source_line[x] & mask_pixel) == 0 || (source_line[x] & mask_pixel) == mask_pixel) {
+                if ((source_line[x] & mask_pixel) == black_pixel ||
+                        (source_line[x] & mask_pixel) == mask_pixel) {
                     // source_line[x] is pure black or pure white
+
+                    if (!has_bw && (source_line[x] & mask_pixel) == black_pixel) {
+                        has_bw = true;
+                    }
+
                     if (keep_orig_fore_subscan && foreground_orig_line) {
                         foreground_orig_line[x] = source_orig_line[x];
                     } else if (!keep_orig_fore_subscan && foreground_mono_line) {
@@ -117,7 +142,7 @@ public:
                     }
 
                 } else {
-                    only_bw = false;
+                    if (!has_color) has_color = true;
                     // non-BW
                     if (keep_orig_fore_subscan && foreground_orig_line) {
                         foreground_orig_line[x] = white_pixel;
@@ -153,7 +178,10 @@ public:
             }
         }
 
-        return only_bw;
+        int res = SplitResult::EmptyImage;
+        if (has_bw)    res |= SplitResult::HaveBackground;
+        if (has_color) res |= SplitResult::HaveForeground;
+        return res;
     }
 };
 

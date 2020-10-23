@@ -67,6 +67,9 @@ public:
     {
         return m_page > 0;
     }
+
+    QByteArray toByteArray() const;
+    static int fromByteArray(const QByteArray& data, ImageId& imageId);
 private:
     QString m_filePath;
 

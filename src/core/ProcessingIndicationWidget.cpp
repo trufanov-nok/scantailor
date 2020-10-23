@@ -40,6 +40,7 @@ ProcessingIndicationWidget::ProcessingIndicationWidget(QWidget* parent)
 {
     m_headColor = palette().color(QPalette::Window).darker(200);
     m_tailColor = palette().color(QPalette::Window).darker(130);
+
 }
 
 void
@@ -98,4 +99,10 @@ ProcessingIndicationWidget::animationRect() const
     r.moveCenter(rect().center());
     r &= rect();
     return r;
+}
+
+QSize
+ProcessingIndicationWidget::sizeHint() const
+{
+    return QSize(80, 80);
 }

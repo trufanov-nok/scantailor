@@ -574,7 +574,7 @@ ImageViewBase::keyPressEvent(QKeyEvent* event)
     m_rootInteractionHandler.keyPressEvent(event, m_interactionState);
     event->setAccepted(true);
     updateStatusTipAndCursor();
-    if (m_alternativeImage &&
+    if (!event->isAutoRepeat() && m_alternativeImage &&
             GlobalStaticSettings::checkKeysMatch(PageViewDisplayOriginal,
                     event->modifiers(),
                     (Qt::Key)event->key())) {
@@ -592,7 +592,7 @@ ImageViewBase::keyReleaseEvent(QKeyEvent* event)
     m_rootInteractionHandler.keyReleaseEvent(event, m_interactionState);
     event->setAccepted(true);
     updateStatusTipAndCursor();
-    if (m_alternativeImage &&
+    if (!event->isAutoRepeat() && m_alternativeImage &&
             GlobalStaticSettings::checkKeysMatch(PageViewDisplayOriginal,
                     event->modifiers(),
                     (Qt::Key)event->key())) {

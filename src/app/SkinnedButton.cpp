@@ -31,12 +31,14 @@ SkinnedButton::SkinnedButton(
     QString const& normal_state_file,
     QString const& hover_state_file,
     QString const& pressed_state_file,
+    QString const& disabled_state_file,
     QWidget* parent)
     :   QToolButton(parent),
         m_normalStatePixmap(normal_state_file),
         m_normalStateFile(normal_state_file),
         m_hoverStateFile(hover_state_file),
-        m_pressedStateFile(pressed_state_file)
+        m_pressedStateFile(pressed_state_file),
+        m_disabledStateFile(disabled_state_file)
 {
     updateStyleSheet();
 }
@@ -52,6 +54,13 @@ void
 SkinnedButton::setPressedImage(QString const& file)
 {
     m_pressedStateFile = file;
+    updateStyleSheet();
+}
+
+void
+SkinnedButton::setDisabledImage(QString const& file)
+{
+    m_disabledStateFile = file;
     updateStyleSheet();
 }
 
@@ -96,6 +105,14 @@ SkinnedButton::updateStyleSheet()
                      "image: url(%1);"
                      "}"
                  ).arg(m_pressedStateFile);
+    }
+
+    if (!m_disabledStateFile.isEmpty()) {
+        style += QString(
+                     "QToolButton:!enabled {"
+                     "image: url(%1);"
+                     "}"
+                 ).arg(m_disabledStateFile);
     }
 
     setStyleSheet(style);
